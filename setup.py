@@ -21,9 +21,17 @@ js_files = package_files('mlflow/server/js/build')
 models_container_server_files = package_files("mlflow/models/container")
 alembic_files = ["../mlflow/alembic/alembic.ini", "../mlflow/temporary_db_migrations_for_pre_1_users/alembic.ini"]
 
+
+def _check_add_criteo_environment(package_name):
+    if "CRITEO_ENV" in os.environ:
+        return package_name + "+criteo"
+
+    return package_name
+
+
 setup(
     name='mlflow',
-    version=version,
+    version=_check_add_criteo_environment(version),
     packages=find_packages(exclude=['tests', 'tests.*']),
     package_data={"mlflow": js_files + models_container_server_files + alembic_files},
     install_requires=[
