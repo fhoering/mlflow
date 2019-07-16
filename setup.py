@@ -23,7 +23,8 @@ alembic_files = ["../mlflow/alembic/alembic.ini", "../mlflow/temporary_db_migrat
 
 
 def _check_add_criteo_environment(package_name):
-    if "CRITEO_ENV" in os.environ:
+    # Check both case because soon criteois.lan will change to crto.in
+    if "criteois.lan" in os.getenv("JENKINS_URL") or "crto.in" in os.getenv("JENKINS_URL"):
         return package_name + "+criteo"
 
     return package_name
