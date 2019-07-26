@@ -6,7 +6,6 @@ import laptopSvg from '../static/laptop.svg';
 import projectSvg from '../static/project.svg';
 import qs from 'qs';
 import { MLFLOW_INTERNAL_PREFIX } from './TagUtils';
-import { message } from 'antd';
 
 class Utils {
   /**
@@ -395,11 +394,6 @@ class Utils {
       return '/' + relativeUrl;
     }
     return relativeUrl;
-  }
-
-  static logErrorAndNotifyUser(e) {
-    console.error(e);
-    message.error(e.getUserVisibleError());
   }
 }
 

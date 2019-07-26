@@ -4,6 +4,7 @@ import Utils from "../utils/Utils";
 import { Link } from 'react-router-dom';
 import Routes from '../Routes';
 import { DEFAULT_EXPANDED_VALUE } from './ExperimentView';
+import { SEARCH_MAX_RESULTS } from '../Actions';
 import { CollapsibleTagsCell } from './CollapsibleTagsCell';
 
 export default class ExperimentViewUtil {
@@ -402,7 +403,7 @@ export default class ExperimentViewUtil {
         }
       }
     });
-    return mergedRows.slice(0);
+    return mergedRows.slice(0, SEARCH_MAX_RESULTS);
   }
 
   static getRows({ runInfos, tagsList, runsExpanded, getRow }) {
