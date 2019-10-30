@@ -204,9 +204,38 @@ def _run(uri, experiment_id, entry_point="main", version=None, parameters=None,
         )
         return submitted_run
 
-    supported_backends = ["local", "databricks", "kubernetes"]
+    # CRITEO
+    elif backend == "yarn":
+        # For the time being it does not make sense to support
+        # configurations on MLProject file, we prefer a .py
+        # entry point.
+        from mlflow.projects import yarn
+
+        tracking.MlflowClient().set_tag(active_run.info.run_id,
+            MLFLOW_PROJECT_BACKEND, "yarn")
+
+        command = entry_point_obj.compute_command(parameters, storage_dir=None)
+
+        submitted_run = yarn.run_yarn_job(
+            remote_run=active_run,
+            uri=uri, entry_point=entry_point,
+            work_dir=work_dir, command=command,
+            experiment_id=experiment_id,
+            backend_config=backend_config
+        )
+
+        tracking.MlflowClient().set_tag(active_run.info.run_id,
+            yarn.MLFLOW_YARN_APPLICATION_ID, submitted_run._skein_app_id)
+        tracking.MlflowClient().set_tag(active_run.info.run_id,
+            yarn.YARN_APPLICATION_ID, submitted_run._skein_app_id)
+
+        return submitted_run
+
+    supported_backends = ["local", "databricks", "kubernetes", "yarn"]
+    # CRITEO END
     raise ExecutionException("Got unsupported execution mode %s. Supported "
                              "values: %s" % (backend, supported_backends))
+
 
 
 def run(uri, entry_point="main", version=None, parameters=None,
