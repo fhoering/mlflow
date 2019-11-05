@@ -13,7 +13,7 @@ from mlflow.entities.model_registry import RegisteredModel, ModelVersion
 from mlflow.exceptions import MlflowException
 from mlflow.protos import databricks_pb2
 from mlflow.protos.service_pb2 import CreateExperiment, MlflowService, GetExperiment, \
-    GetRun, SearchRuns, ListArtifacts, GetMetricHistory, CreateRun, \
+    GetRun, GetRuns, SearchRuns, ListArtifacts, GetMetricHistory, CreateRun, \
     UpdateRun, LogMetric, LogParam, SetTag, ListExperiments, \
     DeleteExperiment, RestoreExperiment, RestoreRun, DeleteRun, UpdateExperiment, LogBatch, \
     DeleteTag, SetExperimentTag, GetExperimentByName, UpdateArtifactsLocation
@@ -140,6 +140,7 @@ def catch_mlflow_exception(func):
             response.set_data(e.serialize_as_json())
             response.status_code = e.get_http_status_code()
             return response
+
     return wrapper
 
 
@@ -377,6 +378,17 @@ def _search_runs():
     if run_entities.token:
         response_message.next_page_token = run_entities.token
     response = Response(mimetype='application/json')
+    response.set_data(message_to_json(response_message))
+    return response
+
+
+@catch_mlflow_exception
+def _get_runs():
+    request_message = _get_request_message(GetRuns())
+    response_message = GetRuns.Response()
+    run_entities = _get_tracking_store().get_runs(request_message.experiment_id)
+    response = Response(mimetype='application/json')
+    response_message.response = json.dumps(run_entities)
     response.set_data(message_to_json(response_message))
     return response
 
@@ -624,6 +636,7 @@ def get_endpoints():
     """
     :return: List of tuples (path, handler, methods)
     """
+
     def get_service_endpoints(service):
         ret = []
         for service_method in service.DESCRIPTOR.methods:
@@ -656,6 +669,7 @@ HANDLERS = {
     DeleteTag: _delete_tag,
     LogBatch: _log_batch,
     GetRun: _get_run,
+    GetRuns: _get_runs,
     SearchRuns: _search_runs,
     ListArtifacts: _list_artifacts,
     GetMetricHistory: _get_metric_history,

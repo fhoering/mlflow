@@ -229,6 +229,29 @@ class AbstractStore:
                                         order_by, page_token)
         return PagedList(runs, token)
 
+
+    def get_runs(self, experiment_id):
+        """
+        Return runs of a given experiment id.
+
+        :param experiment_id: List of experiment ids to scope the search
+
+        :return: A list of :py:class:`mlflow.entities.Run` objects that satisfy the search
+            expressions.
+        """
+        runs = self._get_runs(experiment_id)
+        return runs
+
+    @abstractmethod
+    def _get_runs(self, experiment_id):
+        """
+        Return runs for a given experiment id
+
+        :return: A tuple of ``runs`` where ``runs`` is a list of
+            :py:class:`mlflow.entities.Run` objects for this experiment id
+        """
+        pass
+
     @abstractmethod
     def _search_runs(self, experiment_ids, filter_string, run_view_type, max_results, order_by,
                      page_token):

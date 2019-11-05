@@ -369,6 +369,20 @@ service MlflowService {
     };
   }
 
+
+  // Get runs for an experiment
+  rpc getRuns (GetRuns) returns (GetRuns.Response) {
+    option (rpc) = {
+      endpoints: [{
+        method: "GET",
+        path: "/mlflow/runs/get-all"
+        since { major: 2, minor: 0 },
+      }],
+      visibility: PUBLIC,
+      rpc_doc_title: "Get Runs",
+    };
+  }
+
   // List artifacts for a run. Takes an optional ``artifact_path`` prefix which if specified,
   // the response contains only artifacts with the specified prefix.
   //
@@ -916,6 +930,17 @@ message GetRun {
   message Response {
     // Run metadata (name, start time, etc) and data (metrics, params, and tags).
     optional Run run = 1;
+  }
+}
+
+message GetRuns {
+  option (scalapb.message).extends = "com.databricks.rpc.RPC[$this.Response]";
+
+  // Experiment ID to search.
+  optional string experiment_id = 1;
+
+  message Response {
+    optional string response = 1;
   }
 }
 

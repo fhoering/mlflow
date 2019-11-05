@@ -4,6 +4,7 @@ import uuid
 import math
 import posixpath
 import sqlalchemy
+from sqlalchemy.sql import text
 
 from mlflow.entities.lifecycle_stage import LifecycleStage
 from mlflow.store.tracking import SEARCH_MAX_RESULTS_THRESHOLD
@@ -572,6 +573,31 @@ class SqlAlchemyStore(AbstractStore):
                     "See https://mlflow.org/docs/latest/tracking.html#adding-tags-to-runs",
                     error_code=INVALID_STATE)
             session.delete(filtered_tags[0])
+
+    def _get_runs(self, experiment_id):
+        with self.ManagedSessionMaker() as session:
+            runs = session.execute(f"""
+            select fst.run_uuid, fst.user_id, fst.status, fst.metrics, snd.params, trd.tags from 
+(SELECT runs.run_uuid, user_id, status,
+GROUP_CONCAT(CONCAT(latest_metrics.`key`,',',latest_metrics.value) ) as metrics
+FROM mlflow_db.runs
+JOIN latest_metrics on latest_metrics.run_uuid = runs.run_uuid
+Where experiment_id = {experiment_id}
+GROUP by run_uuid) fst
+join (SELECT runs.run_uuid,
+GROUP_CONCAT(CONCAT(params.`key`,',',params.value) ) as params
+FROM mlflow_db.runs
+JOIN params on params.run_uuid = runs.run_uuid
+Where experiment_id = {experiment_id}
+GROUP by run_uuid) as snd on snd.run_uuid = fst.run_uuid
+join (SELECT runs.run_uuid,
+GROUP_CONCAT(CONCAT(tags.`key`,',',tags.value) ) as tags
+FROM mlflow_db.runs
+JOIN tags on tags.run_uuid = runs.run_uuid
+Where experiment_id = {experiment_id}
+GROUP by run_uuid) as trd on trd.run_uuid = fst.run_uuid
+            """)
+            return [dict(r) for r in runs]
 
     def _search_runs(self, experiment_ids, filter_string, run_view_type, max_results, order_by,
                      page_token):
