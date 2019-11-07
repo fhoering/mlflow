@@ -5,6 +5,8 @@ import math
 import posixpath
 import sqlalchemy
 import sqlalchemy.sql.expression as sql
+from itertools import groupby
+from sqlalchemy.orm import attributes
 
 from mlflow.entities.lifecycle_stage import LifecycleStage
 from mlflow.store.tracking import SEARCH_MAX_RESULTS_THRESHOLD
@@ -25,7 +27,6 @@ from mlflow.utils.search_utils import SearchUtils
 from mlflow.utils.validation import _validate_batch_log_limits, _validate_batch_log_data, \
     _validate_run_id, _validate_metric, _validate_experiment_tag, _validate_tag
 
-
 _logger = logging.getLogger(__name__)
 
 # For each database table, fetch its columns and define an appropriate attribute for each column
@@ -35,6 +36,32 @@ _logger = logging.getLogger(__name__)
 # https://docs.sqlalchemy.org/en/latest/orm/mapping_api.html#sqlalchemy.orm.configure_mappers
 # and https://docs.sqlalchemy.org/en/latest/orm/mapping_api.html#sqlalchemy.orm.mapper.Mapper
 sqlalchemy.orm.configure_mappers()
+
+
+def disjoint_load(query, parents, attr, whitelist=None):
+    target = attr.prop.mapper
+    local_cols, remote_cols = zip(*attr.prop.local_remote_pairs)
+
+    child_q = query.from_self(target).join(attr)
+    if whitelist is not None:
+        child_q = child_q.filter(whitelist)
+    child_q = child_q.order_by(*remote_cols)
+    if attr.prop.order_by:
+        child_q = child_q.order_by(*attr.prop.order_by)
+
+    collections = dict((k, list(v)) for k, v in groupby(
+        child_q,
+        lambda x: tuple([getattr(x, c.key) for c in remote_cols])
+    ))
+    for p in parents:
+        attributes.set_committed_value(
+            p,
+            attr.key,
+            collections.get(
+                tuple([getattr(p, c.key) for c in local_cols]),
+                ())
+        )
+    return parents
 
 
 class SqlAlchemyStore(AbstractStore):
@@ -246,8 +273,8 @@ class SqlAlchemyStore(AbstractStore):
             .query(SqlExperiment) \
             .options(*query_options) \
             .filter(
-                SqlExperiment.experiment_id == experiment_id,
-                SqlExperiment.lifecycle_stage.in_(stages)) \
+            SqlExperiment.experiment_id == experiment_id,
+            SqlExperiment.lifecycle_stage.in_(stages)) \
             .one_or_none()
 
         if experiment is None:
@@ -285,8 +312,8 @@ class SqlAlchemyStore(AbstractStore):
                 .query(SqlExperiment) \
                 .options(*self._get_eager_experiment_query_options()) \
                 .filter(
-                    SqlExperiment.name == experiment_name,
-                    SqlExperiment.lifecycle_stage.in_(stages)) \
+                SqlExperiment.name == experiment_name,
+                SqlExperiment.lifecycle_stage.in_(stages)) \
                 .one_or_none()
             return experiment.to_mlflow_entity() if experiment is not None else None
 
@@ -364,6 +391,7 @@ class SqlAlchemyStore(AbstractStore):
         :return: A list of SQLAlchemy query options that can be used to eagerly load the following
                  run attributes when fetching a run: ``latest_metrics``, ``params``, and ``tags``.
         """
+
         return [
             # Use a subquery load rather than a joined load in order to minimize the memory overhead
             # of the eager loading procedure. For more information about relationship loading
@@ -371,7 +399,7 @@ class SqlAlchemyStore(AbstractStore):
             # loading_relationships.html#relationship-loading-techniques
             sqlalchemy.orm.subqueryload(SqlRun.latest_metrics),
             sqlalchemy.orm.subqueryload(SqlRun.params),
-            sqlalchemy.orm.subqueryload(SqlRun.tags),
+            sqlalchemy.orm.subqueryload(SqlRun.tags)
         ]
 
     def _check_run_is_active(self, run):
@@ -467,8 +495,8 @@ class SqlAlchemyStore(AbstractStore):
         latest_metric = session \
             .query(SqlLatestMetric) \
             .filter(
-                SqlLatestMetric.run_uuid == logged_metric.run_uuid,
-                SqlLatestMetric.key == logged_metric.key) \
+            SqlLatestMetric.run_uuid == logged_metric.run_uuid,
+            SqlLatestMetric.key == logged_metric.key) \
             .with_for_update() \
             .one_or_none()
         if latest_metric is None or _compare_metrics(logged_metric, latest_metric):
@@ -575,7 +603,7 @@ class SqlAlchemyStore(AbstractStore):
             session.delete(filtered_tags[0])
 
     def _search_runs(self, experiment_ids, filter_string, run_view_type, max_results, order_by,
-                     page_token):
+                     page_token, metrics_whitelist, params_whitelist, tags_whitelist):
 
         def compute_next_token(current_size):
             next_token = None
@@ -592,7 +620,9 @@ class SqlAlchemyStore(AbstractStore):
                                   INVALID_PARAMETER_VALUE)
 
         stages = set(LifecycleStage.view_type_to_stages(run_view_type))
-
+        import logging
+        logging.basicConfig()
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
         with self.ManagedSessionMaker() as session:
             # Fetch the appropriate runs and eagerly load their summary metrics, params, and
             # tags. These run attributes are referenced during the invocation of
@@ -606,16 +636,26 @@ class SqlAlchemyStore(AbstractStore):
                 query = query.join(j)
 
             offset = SearchUtils.parse_start_offset_from_page_token(page_token)
-            queried_runs = query.distinct() \
-                .options(*self._get_eager_run_query_options()) \
-                .filter(
-                    SqlRun.experiment_id.in_(experiment_ids),
-                    SqlRun.lifecycle_stage.in_(stages),
-                    *_get_attributes_filtering_clauses(parsed_filters)) \
+            queried_runs = query.distinct()\
+                .filter(SqlRun.experiment_id.in_(experiment_ids),
+                                               SqlRun.lifecycle_stage.in_(stages),
+                                               *_get_attributes_filtering_clauses(parsed_filters)) \
                 .order_by(*parsed_orderby) \
-                .offset(offset).limit(max_results).all()
+                .offset(offset).limit(max_results)
 
-            runs = [run.to_mlflow_entity() for run in queried_runs]
+            all_runs = queried_runs.all()
+
+            # equivalent to subquery load strategy but includes filter feature
+            # see https://groups.google.com/forum/m/#!msg/sqlalchemy/zr99U2onipY/6lAB0fy3sGsJ for explanation
+            all_runs = disjoint_load(queried_runs, all_runs, SqlRun.tags,
+                                     SqlTag.key.in_(tags_whitelist) if tags_whitelist is not None else None)
+            all_runs = disjoint_load(queried_runs, all_runs, SqlRun.latest_metrics,
+                                     SqlLatestMetric.key.in_(metrics_whitelist) if metrics_whitelist is not None
+                                     else None)
+            all_runs = disjoint_load(queried_runs, all_runs, SqlRun.params,
+                                     SqlParam.key.in_(params_whitelist) if params_whitelist is not None else None)
+
+            runs = [run.to_mlflow_entity() for run in all_runs]
             next_page_token = compute_next_token(len(runs))
 
         return runs, next_page_token
@@ -695,9 +735,9 @@ def _to_sqlalchemy_filtering_statement(sql_statement, session):
     if op:
         return (
             session
-            .query(entity)
-            .filter(entity.key == key_name, op(entity.value, value))
-            .subquery()
+                .query(entity)
+                .filter(entity.key == key_name, op(entity.value, value))
+                .subquery()
         )
     else:
         return None
