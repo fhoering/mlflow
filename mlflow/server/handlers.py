@@ -361,6 +361,8 @@ def _get_run():
 
 @catch_mlflow_exception
 def _search_runs():
+    import time
+    begin = time.time()
     request_message = _get_request_message(SearchRuns())
     response_message = SearchRuns.Response()
     run_view_type = ViewType.ACTIVE_ONLY
@@ -371,13 +373,20 @@ def _search_runs():
     experiment_ids = request_message.experiment_ids
     order_by = request_message.order_by
     page_token = request_message.page_token
+    print("parse request : " + str(time.time() - begin))
+    begin = time.time()
     run_entities = _get_tracking_store().search_runs(experiment_ids, filter_string, run_view_type,
                                                      max_results, order_by, page_token)
+    print("store search run : " + str(time.time() - begin))
+    begin = time.time()
     response_message.runs.extend([r.to_proto() for r in run_entities])
+    print("proto serialization : " + str(time.time() - begin))
+    begin = time.time()
     if run_entities.token:
         response_message.next_page_token = run_entities.token
     response = Response(mimetype='application/json')
     response.set_data(message_to_json(response_message))
+    print("json serialization : " + str(time.time() - begin))
     return response
 
 

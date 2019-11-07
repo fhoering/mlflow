@@ -577,6 +577,8 @@ class SqlAlchemyStore(AbstractStore):
     def _search_runs(self, experiment_ids, filter_string, run_view_type, max_results, order_by,
                      page_token):
 
+        import time
+        begin = time.time()
         def compute_next_token(current_size):
             next_token = None
             if max_results == current_size:
@@ -593,6 +595,12 @@ class SqlAlchemyStore(AbstractStore):
 
         stages = set(LifecycleStage.view_type_to_stages(run_view_type))
 
+        print("setup : " + str(time.time() - begin))
+        begin = time.time()
+
+        import logging
+        logging.basicConfig()
+        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
         with self.ManagedSessionMaker() as session:
             # Fetch the appropriate runs and eagerly load their summary metrics, params, and
             # tags. These run attributes are referenced during the invocation of
@@ -606,16 +614,26 @@ class SqlAlchemyStore(AbstractStore):
                 query = query.join(j)
 
             offset = SearchUtils.parse_start_offset_from_page_token(page_token)
-            queried_runs = query.distinct() \
+
+            print("pre-build query : " + str(time.time() - begin))
+            begin = time.time()
+            final_query = query.distinct() \
                 .options(*self._get_eager_run_query_options()) \
                 .filter(
                     SqlRun.experiment_id.in_(experiment_ids),
                     SqlRun.lifecycle_stage.in_(stages),
                     *_get_attributes_filtering_clauses(parsed_filters)) \
                 .order_by(*parsed_orderby) \
-                .offset(offset).limit(max_results).all()
+                .offset(offset).limit(max_results)
+            print("build query : " + str(time.time() - begin))
+            begin = time.time()
+            queried_runs = final_query.all()
+            print("run query : " + str(time.time() - begin))
+            begin = time.time()
 
             runs = [run.to_mlflow_entity() for run in queried_runs]
+
+            print("convert to mlflow entity : " + str(time.time() - begin))
             next_page_token = compute_next_token(len(runs))
 
         return runs, next_page_token
