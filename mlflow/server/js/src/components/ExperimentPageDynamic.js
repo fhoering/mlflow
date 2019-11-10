@@ -6,7 +6,9 @@ import {
 import { withRouter } from 'react-router-dom';
 import { MlflowService } from '../sdk/MlflowService'
 import ReactTable from "react-table";
+import Select from 'react-select';
 import "react-table/react-table.css";
+import chroma from 'chroma-js';
 
 function keyValueListToObject(l) {
   if(l === undefined) {
@@ -21,6 +23,7 @@ function keyValueListToObject(l) {
 function transformAttributesValues(attributes) {
   const cloned = {...attributes};
   cloned['start_time'] = new Date(parseInt(cloned['start_time'])).toLocaleString()
+  cloned['end_time'] = new Date(parseInt(cloned['end_time'])).toLocaleString()
   return cloned;
 }
 
@@ -32,6 +35,57 @@ function transformRun(r) {
     params: r.data === undefined ? {} : keyValueListToObject(r.data.params)
   }
 }
+
+
+const colourStyles = {
+  control: styles => ({ ...styles, backgroundColor: 'white' }),
+  option: (styles, { data, isDisabled, isFocused, isSelected }) => {
+    const color = chroma(data.color);
+    console.log(data.color)
+    return {
+      ...styles,
+      backgroundColor: isDisabled
+        ? null
+        : isSelected
+        ? data.color
+        : isFocused
+        ? color.alpha(0.1).css()
+        : null,
+      color: isDisabled
+        ? '#ccc'
+        : isSelected
+        ? chroma.contrast(color, 'white') > 2
+          ? 'white'
+          : 'black'
+        : data.color,
+      cursor: isDisabled ? 'not-allowed' : 'default',
+
+      ':active': {
+        ...styles[':active'],
+        backgroundColor: !isDisabled && (isSelected ? data.color : color.alpha(0.3).css()),
+      },
+    };
+  },
+  multiValue: (styles, { data }) => {
+    const color = chroma(data.color);
+    return {
+      ...styles,
+      backgroundColor: color.alpha(0.1).css(),
+    };
+  },
+  multiValueLabel: (styles, { data }) => ({
+    ...styles,
+    color: data.color,
+  }),
+  multiValueRemove: (styles, { data }) => ({
+    ...styles,
+    color: data.color,
+    ':hover': {
+      backgroundColor: data.color,
+      color: 'white',
+    },
+  }),
+};
 
 const requestData = (experimentId, pageSize, page, sorted, filtered,
   columnsAttributes, columnsTags, columnsMetrics, columnsParams) => {
@@ -62,24 +116,76 @@ const requestData = (experimentId, pageSize, page, sorted, filtered,
   })
 };
 
+const columnColors = {
+  'metrics': 'blue',
+  'tags': 'orange',
+  'attributes': 'red',
+  'params': 'green'
+}
+
+const toColumn = (prefix) => (name) => ({
+  Header: name,
+  id: prefix+'.`'+name+'`',
+  value: prefix+'.`'+name+'`',
+  accessor: d => d[prefix][name],
+  kind: prefix,
+  label: name,
+  color: columnColors[prefix]
+})
+
 export class ExperimentPageDynamic extends Component {
   constructor(props) {
     super(props);
+    const defaultColumns = [].concat([
+        'start_time'
+      ].map(toColumn('attributes')),
+      [
+        'mlflow.user',
+        'mlflow.runName',
+      ].map(toColumn('tags')),
+      [
+        'triplet_precision',
+      ].map(toColumn('metrics')),
+      [
+        'batch_size'
+      ].map(toColumn('params'))
+    );
     this.state = {
       data: [],
       pages: null,
       loading: true,
-      columnsAttributes: ['start_time'],
-      columnsTags: ['mlflow.user', 'mlflow.runName'],
-      columnsMetrics: ['triplet_precision'],
-      columnsParams: ['batch_size']
+      columns: defaultColumns,
+      availableColumns: defaultColumns
     };
     this.fetchData = this.fetchData.bind(this);
+    this.handleAttributesChange = this.handleAttributesChange.bind(this);
+    this.fetchColumns()
+  }
+
+  fetchColumns() {
+    const { experimentId } = this.props;
+    wrapDeferred(MlflowService.listAllColumns, {
+      experiment_ids: [experimentId]
+    }).then(({attributes, tags, metrics, params}) => {
+      const columns = [].concat(
+        attributes.map(toColumn('attributes')),
+        tags.map(toColumn('tags')),
+        metrics.map(toColumn('metrics')),
+        params.map(toColumn('params')))
+
+      this.setState({
+        availableColumns: columns
+      })
+    })
+  }
+
+  extractColumnsPerKind(columns, kindSelected) {
+    return columns.filter(({kind}) => kind === kindSelected).map(({label}) => label)
   }
 
   fetchData(state) {
     const { experimentId } = this.props;
-    const { columnsAttributes, columnsTags, columnsMetrics, columnsParams } = this.state;
+    const { columns } = this.state;
     this.setState({ loading: true });
     requestData(
       experimentId,
@@ -87,10 +193,10 @@ export class ExperimentPageDynamic extends Component {
       state.page,
       state.sorted,
       state.filtered,
-      columnsAttributes,
-      columnsTags,
-      columnsMetrics,
-      columnsParams
+      this.extractColumnsPerKind(columns, 'attributes'),
+      this.extractColumnsPerKind(columns, 'tags'),
+      this.extractColumnsPerKind(columns, 'metrics'),
+      this.extractColumnsPerKind(columns, 'params')
     ).then(res => {
       this.setState({
         data: res.rows,
@@ -100,20 +206,22 @@ export class ExperimentPageDynamic extends Component {
     });
   }
 
+  handleAttributesChange(columns) {
+    this.setState({columns: columns === null ? [] : columns})
+  }
+
   render() {
-    const { data, pages, loading, columnsAttributes, columnsTags, columnsMetrics, columnsParams } = this.state;
-    const toColumn = (prefix) => (name) => ({
-      Header: name,
-      id: prefix+'.`'+name+'`',
-      accessor: d => d[prefix][name]
-    })
-    const columns = [].concat(
-      columnsAttributes.map(toColumn('attributes')),
-      columnsTags.map(toColumn('tags')),
-      columnsMetrics.map(toColumn('metrics')),
-      columnsParams.map(toColumn('params')))
+    const { data, pages, loading, columns, availableColumns } = this.state;
+
     return (
       <div>
+        <Select
+          value={columns}
+          onChange={this.handleAttributesChange}
+          options={availableColumns}
+          isMulti={true}
+          isSearchable={true}
+        />
         <ReactTable
           columns={columns}
           manual // Forces table not to paginate or sort automatically, so we can handle it server-side
@@ -124,6 +232,7 @@ export class ExperimentPageDynamic extends Component {
           filterable
           defaultPageSize={10}
           className="-striped -highlight"
+          styles={colourStyles}
         />
       </div>
     );
