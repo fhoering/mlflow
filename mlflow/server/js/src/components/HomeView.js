@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
 import ExperimentListView from './ExperimentListView';
-import ExperimentPage from './ExperimentPage';
+import ExperimentPageDynamic from './ExperimentPageDynamic';
 import { getExperiments } from '../reducers/Reducers';
 import NoExperimentView from './NoExperimentView';
 
@@ -36,7 +36,7 @@ class HomeView extends Component {
       return (
         <div className="experiment-page-container" style={{height: containerHeight}}>
           { this.props.experimentId !== undefined ?
-            <ExperimentPage experimentId={this.props.experimentId}/> :
+            <ExperimentPageDynamic experimentId={this.props.experimentId}/> :
             <NoExperimentView/>
           }
         </div>
@@ -55,7 +55,7 @@ class HomeView extends Component {
           </div>
           <div className="experiment-view-container">
             { this.props.experimentId !== undefined ?
-             <ExperimentPage experimentId={this.props.experimentId}/> :
+             <ExperimentPageDynamic experimentId={this.props.experimentId}/> :
              <NoExperimentView/>
             }
           </div>
@@ -72,7 +72,7 @@ class HomeView extends Component {
           </div>
           <div className="experiment-page-container">
             { this.props.experimentId !== undefined ?
-              <ExperimentPage experimentId={this.props.experimentId}/> :
+              <ExperimentPageDynamic experimentId={this.props.experimentId}/> :
               <NoExperimentView/>
             }
           </div>

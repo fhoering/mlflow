@@ -36,6 +36,7 @@
     "react-router-redux": "4.0.8",
     "react-scripts": "1.1.4",
     "react-sticky": "6.0.2",
+    "react-table": "^6.10.3",
     "react-treebeard": "2.1.0",
     "react-virtualized": "9.21.0",
     "redux": "3.7.2",
@@ -86,10 +87,10 @@
   },
   "proxy": {
     "/ajax-api": {
-      "target": "http://localhost:5000"
+      "target": "http://gputest001-am6.central.criteo.preprod:5000/"
     },
     "/get-artifact": {
-      "target": "http://localhost:5000",
+      "target": "http://gputest001-am6.central.criteo.preprod:5000/",
       "ws": true
     }
   }
