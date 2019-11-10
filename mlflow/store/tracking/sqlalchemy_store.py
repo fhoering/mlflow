@@ -15,7 +15,7 @@ import mlflow.store.db.utils
 from mlflow.store.tracking.dbmodels.models import SqlExperiment, SqlRun, \
     SqlMetric, SqlParam, SqlTag, SqlExperimentTag, SqlLatestMetric
 from mlflow.store.db.base_sql_model import Base
-from mlflow.entities import RunStatus, SourceType, Experiment
+from mlflow.entities import RunStatus, SourceType, Experiment, Columns
 from mlflow.store.tracking.abstract_store import AbstractStore
 from mlflow.entities import ViewType
 from mlflow.exceptions import MlflowException
@@ -28,6 +28,10 @@ from mlflow.utils.validation import _validate_batch_log_limits, _validate_batch_
     _validate_run_id, _validate_metric, _validate_experiment_tag, _validate_tag
 
 _logger = logging.getLogger(__name__)
+import logging
+
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 # For each database table, fetch its columns and define an appropriate attribute for each column
 # on the table's associated object representation (Mapper). This is necessary to ensure that
@@ -602,6 +606,18 @@ class SqlAlchemyStore(AbstractStore):
                     error_code=INVALID_STATE)
             session.delete(filtered_tags[0])
 
+    def list_all_columns(self, experiment_ids):
+        with self.ManagedSessionMaker() as session:
+            tags = [r[0] for r in session.query(SqlTag.key).join(SqlRun) \
+                .filter(SqlRun.experiment_id.in_(experiment_ids)).distinct().all()]
+            metrics = [r[0] for r in session.query(SqlLatestMetric.key).join(SqlRun) \
+                .filter(SqlRun.experiment_id.in_(experiment_ids)).distinct().all()]
+            params = [r[0] for r in session.query(SqlParam.key).join(SqlRun) \
+                .filter(SqlRun.experiment_id.in_(experiment_ids)).distinct().all()]
+            return Columns(attributes=["run_uuid", "experiment_id", "user_id", "status", "start_time", "end_time",
+                                       "lifecycle_stage", "artifact_uri", "run_id"], metrics=metrics, params=params,
+                           tags=tags)
+
     def _search_runs(self, experiment_ids, filter_string, run_view_type, max_results, order_by,
                      page_token, metrics_whitelist, params_whitelist, tags_whitelist):
 
@@ -620,9 +636,6 @@ class SqlAlchemyStore(AbstractStore):
                                   INVALID_PARAMETER_VALUE)
 
         stages = set(LifecycleStage.view_type_to_stages(run_view_type))
-        import logging
-        logging.basicConfig()
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
         with self.ManagedSessionMaker() as session:
             # Fetch the appropriate runs and eagerly load their summary metrics, params, and
             # tags. These run attributes are referenced during the invocation of
@@ -636,10 +649,10 @@ class SqlAlchemyStore(AbstractStore):
                 query = query.join(j)
 
             offset = SearchUtils.parse_start_offset_from_page_token(page_token)
-            queried_runs = query.distinct()\
+            queried_runs = query.distinct() \
                 .filter(SqlRun.experiment_id.in_(experiment_ids),
-                                               SqlRun.lifecycle_stage.in_(stages),
-                                               *_get_attributes_filtering_clauses(parsed_filters)) \
+                        SqlRun.lifecycle_stage.in_(stages),
+                        *_get_attributes_filtering_clauses(parsed_filters)) \
                 .order_by(*parsed_orderby)
 
             total_run_count = queried_runs.count()
