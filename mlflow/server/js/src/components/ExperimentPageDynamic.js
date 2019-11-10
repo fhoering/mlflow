@@ -57,7 +57,7 @@ const requestData = (experimentId, pageSize, page, sorted, filtered,
     console.log(a.runs.map(transformRun))
     return {
       rows: a.runs.map(transformRun),
-      pages: 10
+      pages: Math.ceil(a['total_run_count'] / pageSize)
     }
   })
 };

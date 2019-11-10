@@ -207,7 +207,9 @@ class RestStore(AbstractStore):
         next_page_token = None
         if response_proto.next_page_token:
             next_page_token = response_proto.next_page_token
-        return runs, next_page_token
+        if response_proto.total_run_count:
+            total_run_count = response_proto.total_run_count
+        return runs, next_page_token, total_run_count
 
     def delete_run(self, run_id):
         req_body = message_to_json(DeleteRun(run_id=run_id))
