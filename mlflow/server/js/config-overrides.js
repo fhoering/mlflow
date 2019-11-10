@@ -56,6 +56,8 @@ module.exports = {
     return function(proxy, allowedHost) {
       const config = configFunction(proxy, allowedHost);
       const proxyTarget = process.env.MLFLOW_PROXY;
+      config.disableHostCheck = true;
+      config.compress = true;
       if (proxyTarget) {
         config.hot = true;
         config.https = true;
