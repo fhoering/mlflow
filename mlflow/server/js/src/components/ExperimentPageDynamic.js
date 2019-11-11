@@ -167,11 +167,12 @@ export class ExperimentPageDynamic extends Component {
     wrapDeferred(MlflowService.listAllColumns, {
       experiment_ids: [experimentId]
     }).then(({attributes, tags, metrics, params}) => {
+      const collator = new Intl.Collator('en');
       const columns = [].concat(
-        attributes.map(toColumn('attributes')),
-        tags.map(toColumn('tags')),
-        metrics.map(toColumn('metrics')),
-        params.map(toColumn('params')))
+        attributes.sort(collator.compare).map(toColumn('attributes')),
+        metrics.sort(collator.compare).map(toColumn('metrics')),
+        params.sort(collator.compare).map(toColumn('params')),
+        tags.sort(collator.compare).map(toColumn('tags')))
 
       this.setState({
         availableColumns: columns
@@ -221,6 +222,7 @@ export class ExperimentPageDynamic extends Component {
           options={availableColumns}
           isMulti={true}
           isSearchable={true}
+          styles={colourStyles}
         />
         <ReactTable
           columns={columns}
@@ -232,7 +234,6 @@ export class ExperimentPageDynamic extends Component {
           filterable
           defaultPageSize={10}
           className="-striped -highlight"
-          styles={colourStyles}
         />
       </div>
     );
