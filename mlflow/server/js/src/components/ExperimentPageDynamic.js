@@ -41,7 +41,6 @@ const colourStyles = {
   control: styles => ({ ...styles, backgroundColor: 'white' }),
   option: (styles, { data, isDisabled, isFocused, isSelected }) => {
     const color = chroma(data.color);
-    console.log(data.color)
     return {
       ...styles,
       backgroundColor: isDisabled
@@ -155,10 +154,15 @@ export class ExperimentPageDynamic extends Component {
       pages: null,
       loading: true,
       columns: defaultColumns,
-      availableColumns: defaultColumns
+      availableColumns: defaultColumns,
+      pageSize: 10,
+      page: 1,
+      sorted: [],
+      filtered: []
     };
     this.fetchData = this.fetchData.bind(this);
     this.handleAttributesChange = this.handleAttributesChange.bind(this);
+    this.updateSorted = this.updateSorted.bind(this);
     this.fetchColumns()
   }
 
@@ -177,6 +181,7 @@ export class ExperimentPageDynamic extends Component {
       this.setState({
         availableColumns: columns
       })
+      this.fetchData()
     })
   }
 
@@ -184,16 +189,16 @@ export class ExperimentPageDynamic extends Component {
     return columns.filter(({kind}) => kind === kindSelected).map(({label}) => label)
   }
 
-  fetchData(state) {
+  fetchData() {
     const { experimentId } = this.props;
-    const { columns } = this.state;
+    const { columns, pageSize, page, sorted, filtered } = this.state;
     this.setState({ loading: true });
     requestData(
       experimentId,
-      state.pageSize,
-      state.page,
-      state.sorted,
-      state.filtered,
+      pageSize,
+      page,
+      sorted,
+      filtered,
       this.extractColumnsPerKind(columns, 'attributes'),
       this.extractColumnsPerKind(columns, 'tags'),
       this.extractColumnsPerKind(columns, 'metrics'),
@@ -209,10 +214,20 @@ export class ExperimentPageDynamic extends Component {
 
   handleAttributesChange(columns) {
     this.setState({columns: columns === null ? [] : columns})
+    setTimeout(() => this.fetchData({}), 0)
+  }
+
+  updateSorted (newSorted) {
+    this.setState({
+      sorted: newSorted
+    })
+    this.fetchData()
   }
 
   render() {
-    const { data, pages, loading, columns, availableColumns } = this.state;
+    const { data, pages, loading, columns, availableColumns, filtered, sorted } = this.state;
+    console.log(sorted, "lol")
+    console.log(filtered, "lol2")
 
     return (
       <div>
@@ -230,9 +245,11 @@ export class ExperimentPageDynamic extends Component {
           data={data}
           pages={pages} // Display the total number of pages
           loading={loading} // Display the loading overlay when we need it
-          onFetchData={this.fetchData} // Request new data when things change
+          onSortedChange={this.updateSorted}
           filterable
           defaultPageSize={10}
+          filtered={filtered}
+          sorted={sorted}
           className="-striped -highlight"
         />
       </div>
