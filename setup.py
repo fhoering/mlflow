@@ -50,6 +50,7 @@ setup(
         'sqlparse',
         'sqlalchemy',
         'gorilla',
+        'skein',
     ],
     extras_require={
         'extras':[
