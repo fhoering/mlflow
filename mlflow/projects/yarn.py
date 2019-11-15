@@ -1,7 +1,6 @@
 import time
 import logging
 import skein
-import thx
 import os
 
 from mlflow.exceptions import ExecutionException
@@ -10,7 +9,6 @@ from mlflow.entities import RunStatus
 
 from thx.hadoop import yarn_launcher
 
-logging.basicConfig(level=logging.INFO)
 _logger = logging.getLogger(__name__)
 
 # All tags prefixed mlflow.* don't appear in the UI
@@ -24,31 +22,21 @@ YARN_MEMORY = 'memory'
 YARN_QUEUE = 'queue'
 YARN_ADDITIONAL_FILES = 'additional_files'
 
-def run_yarn_job(remote_run,
-    uri,
-    entry_point,
-    work_dir,
-    command,
-    experiment_id,
-    backend_config=None
-):
-    _logger.info("uri={}, entry_point={}, work_dir={}, command={}, experiment_id={}".format(
-        uri, entry_point, work_dir, command, experiment_id
-    ))
+
+def run_yarn_job(remote_run, uri, command, experiment_id, backend_config=None):
 
     command_parts = command.split()
 
     kind_of_script = command_parts.pop(0)
     if 'python' != kind_of_script:
-        raise ExecutionException("Running on YARN backend supports only python jobs. You are using '%s'"
-             % (kind_of_script))
-    
+        raise ExecutionException("Running on YARN backend supports only python jobs. "
+                                 "You are using '%s'" % (kind_of_script))
+
     module_name = command_parts.pop(0)
     args = " ".join(command_parts)
     complete_module_name = os.path.join(uri, module_name)
 
     yarn_config = _parse_yarn_config(backend_config)
-    _logger.info("yarn_config = {}".format(yarn_config))
 
     with skein.Client() as skein_client:
         app_id = yarn_launcher.submit(
@@ -63,16 +51,16 @@ def run_yarn_job(remote_run,
             additional_files=yarn_config[YARN_ADDITIONAL_FILES]
         )
 
-        _logger.info("YARN backend launched app_id : {}".format(app_id))
+        _logger.info("YARN backend launched app_id : %s", app_id)
         return YarnSubmittedRun(skein_app_id=app_id, mlflow_run_id=remote_run.info.run_id)
 
-    raise ExecutionException("Got unsupported execution mode YARsN")
+    raise ExecutionException("Not able to launch your job to YARN.")
 
 
 def _parse_yarn_config(backend_config):
     """
     Parses configuration for yarn backend and returns a dictionary
-    with all needed values. In case values are not found in original
+    with all needed values. In case values are not found in ``backend_config``
     dict passed, it is filled with the default values.
     """
 
@@ -82,7 +70,7 @@ def _parse_yarn_config(backend_config):
 
     if YARN_NUM_CORES not in backend_config.keys():
         yarn_config[YARN_NUM_CORES] = 1
-    
+
     if YARN_MEMORY not in backend_config.keys():
         yarn_config[YARN_MEMORY] = "1 GiB"
 
@@ -93,6 +81,7 @@ def _parse_yarn_config(backend_config):
         yarn_config[YARN_ADDITIONAL_FILES] = []
 
     return yarn_config
+
 
 class YarnSubmittedRun(SubmittedRun):
     """
@@ -119,9 +108,9 @@ class YarnSubmittedRun(SubmittedRun):
                 app_report = skein_client.application_report(self._skein_app_id)
                 if state != app_report.state:
                     _logger.info(_format_app_report(app_report))
-                
+
                 if app_report.final_status == skein.model.FinalStatus.FAILED:
-                    _logger.info("YARN Application {} has failed".format(self._skein_app_id))
+                    _logger.info("YARN Application %s has failed", self._skein_app_id)
 
                 if app_report.final_status != skein.model.FinalStatus.UNDEFINED:
                     break
@@ -149,9 +138,9 @@ class YarnSubmittedRun(SubmittedRun):
             return RunStatus.FAILED
         elif app_state == skein.model.FinalStatus.UNDEFINED:
             return RunStatus.RUNNING
-        
-        raise ExecutionException("YARN Application {} has invalid status: {}"
-             % (self._skein_app_id, app_state))
+
+        raise ExecutionException("YARN Application %s has invalid status: %s"
+                                 % (self._skein_app_id, app_state))
 
 
 def _format_app_report(report):
