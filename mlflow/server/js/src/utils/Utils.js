@@ -8,6 +8,46 @@ import qs from 'qs';
 import { MLFLOW_INTERNAL_PREFIX } from './TagUtils';
 import { message } from 'antd';
 
+
+/* Fetch private vcs regex  */
+function getPrivateVcsRegex() {
+  var req = new XMLHttpRequest();
+  var ret = null;
+  req.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      var jsonData = JSON.parse(req.responseText);
+      ret = jsonData['vcs_regex'];
+    }
+  }
+  req.open("GET", "/private_vcs/regex", false);
+  req.send();
+  if (ret) {
+    return new RegExp(ret);
+  } else {
+    return null;
+  }
+}
+
+/* Fetch repo or commit urls for private vcs */
+function getPrivateVcsUrl(url_type) {
+  var req = new XMLHttpRequest();
+  var ret = null;
+  req.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      var jsonData = JSON.parse(req.responseText);
+      ret = jsonData['vcs_url'];
+    }
+  }
+  req.open("GET", "/private_vcs/url?type=" + url_type, false);
+  req.send();
+  return ret;
+}
+
+/* Fetch private vcs settings once */
+const privateVcsRegex = getPrivateVcsRegex()
+const privateVcsRepo = getPrivateVcsUrl("repo")
+const privateVcsCommit = getPrivateVcsUrl("commit")
+
 class Utils {
   /**
    * Merge a runs parameters / metrics.
@@ -157,15 +197,11 @@ class Utils {
     return /[@/]bitbucket.org[:/]([^/.]+)\/([^/#]+)#?(.*)/;
   }
 
-  static getGerritRegex() {
-    return /[@/]review.crto.in[:/](\d*)\/([\w\W]+)/;
-  }
-
   static getGitRepoUrl(sourceName) {
     const gitHubMatch = sourceName.match(Utils.getGitHubRegex());
     const gitLabMatch = sourceName.match(Utils.getGitLabRegex());
     const bitbucketMatch = sourceName.match(Utils.getBitbucketRegex());
-    const gerritMatch = sourceName.match(Utils.getGerritRegex());
+    const privateVcsMatch = sourceName.match(privateVcsRegex);
     let url = null;
     if (gitHubMatch || gitLabMatch) {
       const baseUrl = gitHubMatch ? "https://github.com/" : "https://gitlab.com/";
@@ -180,9 +216,11 @@ class Utils {
       if (bitbucketMatch[3]) {
         url = url + "/src/master/" + bitbucketMatch[3];
       }
-    } else if (gerritMatch) {
-      url = "https://review.crto.in/gitweb?p=" + gerritMatch[2];
-    }
+    } else if (privateVcsMatch) {
+      let ret = privateVcsRepo;;
+      if (ret) {
+        url = ret.replace("privateVcsMatch", privateVcsMatch[2]);
+      }
     return url;
   }
 
@@ -190,7 +228,7 @@ class Utils {
     const gitHubMatch = sourceName.match(Utils.getGitHubRegex());
     const gitLabMatch = sourceName.match(Utils.getGitLabRegex());
     const bitbucketMatch = sourceName.match(Utils.getBitbucketRegex());
-    const gerritMatch = sourceName.match(Utils.getGerritRegex());
+    const privateVcsMatch = sourceName.match(privateVcsRegex);
     let url = null;
     if (gitHubMatch || gitLabMatch) {
       const baseUrl = gitHubMatch ? "https://github.com/" : "https://gitlab.com/";
@@ -201,8 +239,12 @@ class Utils {
       const baseUrl = "https://bitbucket.org/";
       url = (baseUrl + bitbucketMatch[1] + "/" + bitbucketMatch[2].replace(/.git/, '') +
         "/src/" + sourceVersion) + "/" + bitbucketMatch[3];
-    } else if (gerritMatch) {
-      url = "https://review.crto.in/gitweb?p=" + gerritMatch[2] + ";a=commit;h=" + sourceVersion;
+    } else if (privateVcsMatch) {
+      let ret = privateVcsCommit;
+      if (ret) {
+        url = ret.replace("privateVcsMatch", privateVcsMatch[2]);
+        url = url.replace("sourceVersion", sourceVersion)
+      }
     }
     return url;
   }
@@ -229,7 +271,7 @@ class Utils {
     const sourceType = Utils.getSourceType(tags);
     let res = Utils.formatSource(tags);
     if (sourceType === "PROJECT") {
-      const url = Utils.getGitRepoUrl(sourceName);
+        const url = Utils.getGitRepoUrl(sourceName);
       if (url) {
         res = <a target="_top" href={url}>{res}</a>;
       }
