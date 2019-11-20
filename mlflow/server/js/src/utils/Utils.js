@@ -266,7 +266,7 @@ class Utils {
     const sourceType = Utils.getSourceType(tags);
     let res = Utils.formatSource(tags);
     if (sourceType === "PROJECT") {
-      const url = Utils.getGitRepoUrl(sourceName);
+        const url = Utils.getGitRepoUrl(sourceName);
       if (url) {
         res = <a target="_top" href={url}>{res}</a>;
       }
