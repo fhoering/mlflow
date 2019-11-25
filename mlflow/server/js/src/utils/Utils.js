@@ -9,45 +9,6 @@ import { MLFLOW_INTERNAL_PREFIX } from './TagUtils';
 import { message } from 'antd';
 
 
-/* Fetch private vcs regex  */
-function getPrivateVcsRegex() {
-  const req = new XMLHttpRequest();
-  let ret = null;
-  req.onreadystatechange = () => {
-    if (this.readyState === 4 && this.status === 200) {
-      const jsonData = JSON.parse(req.responseText);
-      ret = jsonData['vcs_regex'];
-    }
-  };
-  req.open("GET", "/private_vcs/regex", false);
-  req.send();
-  if (ret) {
-    return new RegExp(ret);
-  } else {
-    return null;
-  }
-}
-
-/* Fetch repo or commit urls for private vcs */
-function getPrivateVcsUrl(url_type) {
-  const req = new XMLHttpRequest();
-  let ret = null;
-  req.onreadystatechange = () => {
-    if (this.readyState === 4 && this.status === 200) {
-      const jsonData = JSON.parse(req.responseText);
-      ret = jsonData['vcs_url'];
-    }
-  };
-  req.open("GET", "/private_vcs/url?type=" + url_type, false);
-  req.send();
-  return ret;
-}
-
-/* Fetch private vcs settings once */
-const privateVcsRegex = getPrivateVcsRegex();
-const privateVcsRepo = getPrivateVcsUrl("repo");
-const privateVcsCommit = getPrivateVcsUrl("commit");
-
 class Utils {
   /**
    * Merge a runs parameters / metrics.
@@ -198,6 +159,7 @@ class Utils {
   }
 
   static getGitRepoUrl(sourceName) {
+    console.log(privateVcsRegex);
     const gitHubMatch = sourceName.match(Utils.getGitHubRegex());
     const gitLabMatch = sourceName.match(Utils.getGitLabRegex());
     const bitbucketMatch = sourceName.match(Utils.getBitbucketRegex());
@@ -482,6 +444,46 @@ class Utils {
   static isModelRegistryEnabled() {
     return true;
   }
+
+  /** 
+   * Fetch private vcs regex
+   */
+  static getPrivateVcsRegex() {
+    const req = new XMLHttpRequest();
+    let ret = null;
+    req.open("GET", "/private_vcs/regex", false);
+    req.send();
+    if (req.status == 200 && req.responseText) {
+      const jsonData = JSON.parse(req.responseText);
+      ret = jsonData['vcs_regex'];
+    }
+    if (ret) {
+      return new RegExp(ret);
+    } else {
+      return null;
+    }
+  }
+  
+  /**
+   * Fetch repo or commit urls for private vcs
+   */
+  static getPrivateVcsUrl(url_type) {
+    const req = new XMLHttpRequest();
+    let ret = null;
+    req.open("GET", "/private_vcs/url?type=" + url_type, false);
+    req.send();
+    if (req.status == 200 && req.responseText) {
+      const jsonData = JSON.parse(req.responseText);
+      ret = jsonData['vcs_url'];
+    }
+    return ret;
+  }
+
 }
+
+/** Fetch private vcs settings once */
+const privateVcsRegex = Utils.getPrivateVcsRegex();
+const privateVcsRepo = Utils.getPrivateVcsUrl("repo");
+const privateVcsCommit = Utils.getPrivateVcsUrl("commit");
 
 export default Utils;

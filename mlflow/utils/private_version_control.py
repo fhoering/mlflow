@@ -36,4 +36,6 @@ def get_private_vcs_url():
         url_type = request.args["type"].upper()
         vcs_url = os.getenv("MLFLOW_PRIVATE_VCS_{}_URL".format(url_type))
 
-    return {"vcs_url": vcs_url}
+    status = 200 if vcs_url is not None else 204
+
+    return {"vcs_url": vcs_url}, status
