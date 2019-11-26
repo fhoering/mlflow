@@ -7,7 +7,6 @@ from flask import Flask, send_from_directory
 from mlflow.server import handlers
 from mlflow.server.handlers import get_artifact_handler, STATIC_PREFIX_ENV_VAR, _add_static_prefix
 from mlflow.utils.process import exec_cmd
-from mlflow.utils.private_version_control import private_vcs
 
 
 # NB: These are intenrnal environment variables used for communication between
@@ -24,7 +23,6 @@ STATIC_DIR = os.path.join(app.root_path, REL_STATIC_DIR)
 for http_path, handler, methods in handlers.get_endpoints():
     app.add_url_rule(http_path, handler.__name__, handler, methods=methods)
 
-app.register_blueprint(private_vcs, url_prefix="/private_vcs")
 
 # Serve the "get-artifact" route.
 @app.route(_add_static_prefix('/get-artifact'))

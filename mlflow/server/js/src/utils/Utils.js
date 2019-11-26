@@ -159,7 +159,6 @@ class Utils {
   }
 
   static getGitRepoUrl(sourceName) {
-    console.log(privateVcsRegex);
     const gitHubMatch = sourceName.match(Utils.getGitHubRegex());
     const gitLabMatch = sourceName.match(Utils.getGitLabRegex());
     const bitbucketMatch = sourceName.match(Utils.getBitbucketRegex());
@@ -178,7 +177,7 @@ class Utils {
       if (bitbucketMatch[3]) {
         url = url + "/src/master/" + bitbucketMatch[3];
       }
-    } else if (privateVcsMatch) {
+    } else if (privateVcsMatch && privateVcsRepo) {
       url = privateVcsRepo.replace("privateVcsMatch", privateVcsMatch[2]);
     }
     return url;
@@ -199,7 +198,7 @@ class Utils {
       const baseUrl = "https://bitbucket.org/";
       url = (baseUrl + bitbucketMatch[1] + "/" + bitbucketMatch[2].replace(/.git/, '') +
         "/src/" + sourceVersion) + "/" + bitbucketMatch[3];
-    } else if (privateVcsMatch) {
+    } else if (privateVcsMatch && privateVcsCommit ) {
       url = privateVcsCommit.replace("privateVcsMatch", privateVcsMatch[2]);
       url = url.replace("sourceVersion", sourceVersion);
     }
@@ -451,9 +450,9 @@ class Utils {
   static getPrivateVcsRegex() {
     const req = new XMLHttpRequest();
     let ret = null;
-    req.open("GET", "/private_vcs/regex", false);
+    req.open("GET", "/api/2.0/mlflow/private_vcs/regex", false);
     req.send();
-    if (req.status == 200 && req.responseText) {
+    if (req.status === 200 && req.responseText) {
       const jsonData = JSON.parse(req.responseText);
       ret = jsonData['vcs_regex'];
     }
@@ -470,9 +469,9 @@ class Utils {
   static getPrivateVcsUrl(url_type) {
     const req = new XMLHttpRequest();
     let ret = null;
-    req.open("GET", "/private_vcs/url?type=" + url_type, false);
+    req.open("GET", "/api/2.0/mlflow/private_vcs/url?type=" + url_type, false);
     req.send();
-    if (req.status == 200 && req.responseText) {
+    if (req.status === 200 && req.responseText) {
       const jsonData = JSON.parse(req.responseText);
       ret = jsonData['vcs_url'];
     }
