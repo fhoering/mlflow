@@ -44,6 +44,8 @@ class SearchUtils(object):
         '!=': operator.ne,
         '<=': operator.le,
         '<': operator.lt,
+        'like': operator.contains,
+        'ilike': operator.contains
     }
 
     @classmethod
@@ -266,7 +268,7 @@ class SearchUtils(object):
         key_type = sed.get('type')
         key = sed.get('key')
         value = sed.get('value')
-        comparator = sed.get('comparator')
+        comparator = sed.get('comparator').lower()
 
         if cls.is_metric(key_type, comparator):
             lhs = run.data.metrics.get(key, None)
@@ -282,6 +284,9 @@ class SearchUtils(object):
                                   error_code=INVALID_PARAMETER_VALUE)
         if lhs is None:
             return False
+        if comparator == 'ilike':
+            value = value.lower()
+            lhs = lhs.lower()
         if comparator in cls.filter_ops.keys():
             return cls.filter_ops.get(comparator)(lhs, value)
         else:
