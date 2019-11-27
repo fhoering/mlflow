@@ -8,7 +8,6 @@ from mlflow.server import handlers
 from mlflow.server.handlers import get_artifact_handler, STATIC_PREFIX_ENV_VAR, _add_static_prefix
 from mlflow.utils.process import exec_cmd
 
-
 # NB: These are intenrnal environment variables used for communication between
 # the cli and the forked gunicorn processes.
 BACKEND_STORE_URI_ENV_VAR = "_MLFLOW_SERVER_FILE_STORE"
