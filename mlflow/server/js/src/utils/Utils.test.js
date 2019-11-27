@@ -1,4 +1,4 @@
-import '../../__mocks__/xhr-mock.js';
+import '../../__mocks__/xhr-mock.test';
 import Utils from './Utils';
 import React from 'react';
 import { shallow } from 'enzyme';
@@ -241,11 +241,11 @@ test('getSearchUrlFromState', () => {
 
 test('getPrivateVcsRegex', () => {
   // with regex string returned
-  XMLHttpRequest.mockImplementation( () => ({
+  XMLHttpRequest.mockImplementation(() => ({
     open: jest.fn(),
     send: jest.fn(),
     status: 200,
-    responseText: JSON.stringify({"vcs_regex": "some_regex"})
+    responseText: JSON.stringify({"vcs_regex": "some_regex"}),
   }));
   expect(Utils.getPrivateVcsRegex()).toEqual(new RegExp('some_regex'));
 
@@ -254,7 +254,7 @@ test('getPrivateVcsRegex', () => {
     open: jest.fn(),
     send: jest.fn(),
     status: 404,
-    responseText: JSON.stringify({"vcs_regex": "some_regex"})
+    responseText: JSON.stringify({"vcs_regex": "some_regex"}),
   }));
   expect(Utils.getPrivateVcsRegex()).toEqual(null);
 });
@@ -265,7 +265,7 @@ test('getPrivateVcsUrl', () => {
     open: jest.fn(),
     send: jest.fn(),
     status: 200,
-    responseText: JSON.stringify({"vcs_url": "repo_url"})
+    responseText: JSON.stringify({"vcs_url": "repo_url"}),
   }));
   expect(Utils.getPrivateVcsUrl("repo")).toEqual("repo_url");
 
@@ -274,7 +274,7 @@ test('getPrivateVcsUrl', () => {
     open: jest.fn(),
     send: jest.fn(),
     status: 200,
-    responseText: JSON.stringify({"vcs_url": "commit_url"})
+    responseText: JSON.stringify({"vcs_url": "commit_url"}),
   }));
   expect(Utils.getPrivateVcsUrl("commit")).toEqual("commit_url");
 
@@ -283,7 +283,7 @@ test('getPrivateVcsUrl', () => {
     open: jest.fn(),
     send: jest.fn(),
     status: 404,
-    responseText: JSON.stringify({"vcs_url": "commit_url"})
+    responseText: JSON.stringify({"vcs_url": "commit_url"}),
   }));
   expect(Utils.getPrivateVcsUrl("commit")).toEqual(null);
-})
+});

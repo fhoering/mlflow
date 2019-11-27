@@ -198,7 +198,7 @@ class Utils {
       const baseUrl = "https://bitbucket.org/";
       url = (baseUrl + bitbucketMatch[1] + "/" + bitbucketMatch[2].replace(/.git/, '') +
         "/src/" + sourceVersion) + "/" + bitbucketMatch[3];
-    } else if (privateVcsMatch && privateVcsCommit ) {
+    } else if (privateVcsMatch && privateVcsCommit) {
       url = privateVcsCommit.replace("privateVcsMatch", privateVcsMatch[2]);
       url = url.replace("sourceVersion", sourceVersion);
     }
@@ -227,7 +227,7 @@ class Utils {
     const sourceType = Utils.getSourceType(tags);
     let res = Utils.formatSource(tags);
     if (sourceType === "PROJECT") {
-        const url = Utils.getGitRepoUrl(sourceName);
+      const url = Utils.getGitRepoUrl(sourceName);
       if (url) {
         res = <a target="_top" href={url}>{res}</a>;
       }
@@ -444,7 +444,7 @@ class Utils {
     return true;
   }
 
-  /** 
+  /**
    * Fetch private vcs regex
    */
   static getPrivateVcsRegex() {
@@ -462,7 +462,7 @@ class Utils {
       return null;
     }
   }
-  
+
   /**
    * Fetch repo or commit urls for private vcs
    */
@@ -477,7 +477,6 @@ class Utils {
     }
     return ret;
   }
-
 }
 
 /** Fetch private vcs settings once */
