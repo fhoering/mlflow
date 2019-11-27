@@ -3,7 +3,7 @@ import json
 import operator
 
 import sqlparse
-from sqlparse.sql import Identifier, Token, Comparison, Statement
+from sqlparse.sql import Identifier, Token, Comparison, Statement, TokenList
 from sqlparse.tokens import Token as TokenType
 
 from mlflow.entities import RunInfo
@@ -15,9 +15,9 @@ import math
 
 class SearchUtils(object):
     VALID_METRIC_COMPARATORS = set(['>', '>=', '!=', '=', '<', '<='])
-    VALID_PARAM_COMPARATORS = set(['!=', '='])
-    VALID_TAG_COMPARATORS = set(['!=', '='])
-    VALID_STRING_ATTRIBUTE_COMPARATORS = set(['!=', '='])
+    VALID_PARAM_COMPARATORS = set(['!=', '=', 'LIKE', 'like', 'ILIKE', 'ilike'])
+    VALID_TAG_COMPARATORS = set(['!=', '=', 'LIKE', 'like', 'ILIKE', 'ilike'])
+    VALID_STRING_ATTRIBUTE_COMPARATORS = set(['!=', '=', 'LIKE', 'like', 'ILIKE', 'ilike'])
     VALID_SEARCH_ATTRIBUTE_KEYS = set(RunInfo.get_searchable_attributes())
     VALID_ORDER_BY_ATTRIBUTE_KEYS = set(RunInfo.get_orderable_attributes())
     _METRIC_IDENTIFIER = "metric"
@@ -45,6 +45,14 @@ class SearchUtils(object):
         '<=': operator.le,
         '<': operator.lt,
     }
+
+    @classmethod
+    def get_sql_filter_ops(cls, column, operator):
+        sql_filter_ops = {
+            'like': column.like,
+            'ilike': column.ilike
+        }
+        return sql_filter_ops[operator]
 
     @classmethod
     def _trim_ends(cls, string_value):
@@ -187,7 +195,9 @@ class SearchUtils(object):
     def _process_statement(cls, statement):
         # check validity
         invalids = list(filter(cls._invalid_statement_token, statement.tokens))
-        if len(invalids) > 0:
+        if len(invalids) == 3 and invalids[1].value.lower() in ['like', 'ilike']:
+            statement.tokens = [Comparison(TokenList(statement.tokens))]
+        elif len(invalids) > 0:
             invalid_clauses = ", ".join("'%s'" % token for token in invalids)
             raise MlflowException("Invalid clause(s) in filter string: %s" % invalid_clauses,
                                   error_code=INVALID_PARAMETER_VALUE)
