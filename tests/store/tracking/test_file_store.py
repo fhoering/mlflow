@@ -458,9 +458,9 @@ class TestFileStore(unittest.TestCase):
         six.assertCountEqual(self, [r2], self._search(fs, experiment_id,
                                                       filter_str="tags.generic_2 LIKE '%other%'"))
         six.assertCountEqual(self, [], self._search(fs, experiment_id,
-                                                      filter_str="tags.generic_2 LIKE 'other%'"))
+                                                    filter_str="tags.generic_2 LIKE 'other%'"))
         six.assertCountEqual(self, [], self._search(fs, experiment_id,
-                                                      filter_str="tags.generic_2 LIKE '%other'"))
+                                                    filter_str="tags.generic_2 LIKE '%other'"))
         six.assertCountEqual(self, [r2], self._search(fs, experiment_id,
                                                       filter_str="tags.generic_2 ILIKE '%OTHER%'"))
 
