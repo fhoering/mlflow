@@ -1,6 +1,7 @@
 import base64
 import json
 import operator
+import re
 
 import sqlparse
 from sqlparse.sql import Identifier, Token, Comparison, Statement, TokenList
@@ -44,8 +45,8 @@ class SearchUtils(object):
         '!=': operator.ne,
         '<=': operator.le,
         '<': operator.lt,
-        'like': operator.contains,
-        'ilike': operator.contains
+        'like': re.match,
+        'ilike': re.match
     }
 
     @classmethod
@@ -284,10 +285,20 @@ class SearchUtils(object):
                                   error_code=INVALID_PARAMETER_VALUE)
         if lhs is None:
             return False
-        if comparator == 'ilike':
-            value = value.lower()
-            lhs = lhs.lower()
-        if comparator in cls.filter_ops.keys():
+
+        if comparator in ['like', 'ilike']:
+            # Change value from sql syntax to regex syntax
+            if comparator == 'ilike':
+                value = value.lower()
+                lhs = lhs.lower()
+            if not value.startswith('%'):
+                value = '^' + value
+            if not value.endswith('%'):
+                value = value + '$'
+            value = value.replace('_', '.').replace('%', '.*')
+            return cls.filter_ops.get(comparator)(value, lhs)
+
+        elif comparator in cls.filter_ops.keys():
             return cls.filter_ops.get(comparator)(lhs, value)
         else:
             return False
