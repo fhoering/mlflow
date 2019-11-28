@@ -679,7 +679,7 @@ def _to_sqlalchemy_filtering_statement(sql_statement, session):
     key_type = sql_statement.get('type')
     key_name = sql_statement.get('key')
     value = sql_statement.get('value')
-    comparator = sql_statement.get('comparator')
+    comparator = sql_statement.get('comparator').lower()
 
     if SearchUtils.is_metric(key_type, comparator):
         entity = SqlLatestMetric
@@ -694,8 +694,8 @@ def _to_sqlalchemy_filtering_statement(sql_statement, session):
         raise MlflowException("Invalid search expression type '%s'" % key_type,
                               error_code=INVALID_PARAMETER_VALUE)
 
-    if comparator.lower() in ['like', 'ilike']:
-        op = SearchUtils.get_sql_filter_ops(entity.value, comparator.lower())
+    if comparator in ['like', 'ilike']:
+        op = SearchUtils.get_sql_filter_ops(entity.value, comparator)
         return (
             session
             .query(entity)
