@@ -1,4 +1,4 @@
-import '../../__mocks__/xhr-mock.test';
+import '../../__mocks__/xhr-mock';
 import Utils from './Utils';
 import React from 'react';
 import { shallow } from 'enzyme';
@@ -237,7 +237,6 @@ test('getSearchUrlFromState', () => {
   expect(Utils.getSearchUrlFromState(st2)).toEqual("b=bbbbbb");
   expect(Utils.getSearchUrlFromState(st3)).toEqual("param=params&metrics=&searchInput=someExpression");
 });
-
 
 test('getPrivateVcsRegex', () => {
   // with regex string returned

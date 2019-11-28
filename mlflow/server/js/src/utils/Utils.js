@@ -162,7 +162,6 @@ class Utils {
     const gitHubMatch = sourceName.match(Utils.getGitHubRegex());
     const gitLabMatch = sourceName.match(Utils.getGitLabRegex());
     const bitbucketMatch = sourceName.match(Utils.getBitbucketRegex());
-    const privateVcsMatch = sourceName.match(privateVcsRegex);
     let url = null;
     if (gitHubMatch || gitLabMatch) {
       const baseUrl = gitHubMatch ? "https://github.com/" : "https://gitlab.com/";
@@ -177,8 +176,11 @@ class Utils {
       if (bitbucketMatch[3]) {
         url = url + "/src/master/" + bitbucketMatch[3];
       }
-    } else if (privateVcsMatch && privateVcsRepo) {
-      url = privateVcsRepo.replace("privateVcsMatch", privateVcsMatch[2]);
+    } else if (!url && Utils.getPrivateVcsConfig()) {
+      const privateVcsMatch = sourceName.match(window.privateVcsRegex);
+      if (privateVcsMatch) {
+        url = window.privateVcsRepo.replace("privateVcsMatch", privateVcsMatch[2]);
+      }
     }
     return url;
   }
@@ -187,7 +189,6 @@ class Utils {
     const gitHubMatch = sourceName.match(Utils.getGitHubRegex());
     const gitLabMatch = sourceName.match(Utils.getGitLabRegex());
     const bitbucketMatch = sourceName.match(Utils.getBitbucketRegex());
-    const privateVcsMatch = sourceName.match(privateVcsRegex);
     let url = null;
     if (gitHubMatch || gitLabMatch) {
       const baseUrl = gitHubMatch ? "https://github.com/" : "https://gitlab.com/";
@@ -198,9 +199,12 @@ class Utils {
       const baseUrl = "https://bitbucket.org/";
       url = (baseUrl + bitbucketMatch[1] + "/" + bitbucketMatch[2].replace(/.git/, '') +
         "/src/" + sourceVersion) + "/" + bitbucketMatch[3];
-    } else if (privateVcsMatch && privateVcsCommit) {
-      url = privateVcsCommit.replace("privateVcsMatch", privateVcsMatch[2]);
-      url = url.replace("sourceVersion", sourceVersion);
+    } else if (!url && Utils.getPrivateVcsConfig) {
+      const privateVcsMatch = sourceName.match(window.privateVcsRegex);
+      if (privateVcsMatch) {
+        url = window.privateVcsCommit.replace("privateVcsMatch", privateVcsMatch[2]);
+        url = url.replace("sourceVersion", sourceVersion);
+      }
     }
     return url;
   }
@@ -477,11 +481,27 @@ class Utils {
     }
     return ret;
   }
-}
 
-/** Fetch private vcs settings once */
-const privateVcsRegex = Utils.getPrivateVcsRegex();
-const privateVcsRepo = Utils.getPrivateVcsUrl("repo");
-const privateVcsCommit = Utils.getPrivateVcsUrl("commit");
+  /**
+   * Fetch private VCS config singletons
+   */
+  static getPrivateVcsConfig() {
+    if (!window.privateVcsRegex) {
+      window.privateVcsRegex = Utils.getPrivateVcsRegex();
+    }
+    if (!window.privateVcsRepo) {
+      window.privateVcsRepo = Utils.getPrivateVcsUrl('repo');
+    }
+    if (!window.privateVcsCommit) {
+      window.privateVcsCommit = Utils.getPrivateVcsUrl('commit');
+    }
+
+    if (window.privateVcsRegex && window.privateVcsRepo && window.privateVcsCommit) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
 
 export default Utils;
