@@ -660,14 +660,13 @@ def _get_attributes_filtering_clauses(parsed):
         key_type = sql_statement.get('type')
         key_name = sql_statement.get('key')
         value = sql_statement.get('value')
-        comparator = sql_statement.get('comparator')
+        comparator = sql_statement.get('comparator').lower()
         if SearchUtils.is_attribute(key_type, comparator):
             # key_name is guaranteed to be a valid searchable attribute of entities.RunInfo
             # by the call to parse_search_filter
             attribute_name = SqlRun.get_attribute_name(key_name)
-            if comparator.lower() in ['like', 'ilike']:
-                op = SearchUtils.get_sql_filter_ops(getattr(SqlRun, attribute_name),
-                                                    comparator.lower())
+            if comparator in ['like', 'ilike']:
+                op = SearchUtils.get_sql_filter_ops(getattr(SqlRun, attribute_name), comparator)
                 clauses.append(op(value))
             elif comparator in SearchUtils.filter_ops:
                 op = SearchUtils.filter_ops.get(comparator)
