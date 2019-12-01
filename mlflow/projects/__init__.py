@@ -208,14 +208,15 @@ def _run(uri, experiment_id, entry_point="main", version=None, parameters=None,
     elif backend == "yarn":
         from mlflow.projects import yarn
 
-        _logger.info("pex_env is: " % project.pex_env)
+        _logger.info("pex_env is: %s" % project.pex_env)
 
         tracking.MlflowClient().set_tag(active_run.info.run_id, MLFLOW_PROJECT_BACKEND, "yarn")
 
         submitted_run = yarn.run_yarn_job(
             remote_run=active_run, uri=uri, entry_point_obj=entry_point_obj,
             final_params=final_params, extra_params=extra_params,
-            experiment_id=experiment_id, backend_config=backend_config
+            experiment_id=experiment_id, pex_env=project.pex_env,
+            backend_config=backend_config
         )
 
         tracking.MlflowClient().set_tag(active_run.info.run_id,

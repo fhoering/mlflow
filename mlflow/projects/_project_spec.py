@@ -60,11 +60,11 @@ def load_project(directory):
     # Validate config if conda_env parameter is present
     conda_env = yaml_obj.get("conda_env")
 
-    #CRITEO
+    # CRITEO
     pex_env = yaml_obj.get("pex_env")
-    if sum(env is not None for env in [docker_env, conda_env, pex_env ]) > 1:
+    if sum(env is not None for env in [docker_env, conda_env, pex_env]) > 1:
         raise ExecutionException("Project cannot contain more than one environment.")
-    #CRITEO END
+    # CRITEO END
 
     # Parse entry points
     entry_points = {}
