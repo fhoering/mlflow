@@ -215,8 +215,8 @@ def _get_application_logs(skein_client, app_id, wait_for_nb_logs=None, log_tries
             _logger.info(f"Got {nb_keys}/{wait_for_nb_logs} log files")
             if not wait_for_nb_logs or nb_keys == wait_for_nb_logs:
                 return logs
-        except Exception:
-            _logger.warning("Cannot collect logs (attempt %s/%s)",
+        except Exception as ex:
+            _logger.exception("Cannot collect logs (attempt %s/%s)",
                             ind+1, log_tries)
         time.sleep(3)
     return None
