@@ -1,7 +1,6 @@
 import time
 import logging
 import skein
-import tempfile
 import os
 
 from mlflow.exceptions import ExecutionException
@@ -60,13 +59,12 @@ def run_yarn_job(remote_run, uri, entry_point_obj, final_params, extra_params,
     complete_module_name = os.path.join(uri, module_name)
 
     yarn_config = _parse_yarn_config(backend_config, extra_params=extra_params)
-    _logger.info("YARN_CONFIG = %s" % yarn_config)
 
     env = _merge_env_lists(env_params, yarn_config[YARN_ENV])
     additional_files += yarn_config[YARN_ADDITIONAL_FILES]
 
-    _logger.info("run = %s , uri = %s, command = %s , experiment_id = %s"
-                 % (remote_run, uri, command, experiment_id))
+    _logger.info("run = %s , uri = %s, command = %s , experiment_id = %s",
+                 remote_run, uri, command, experiment_id)
 
     with skein.Client() as skein_client:
         app_id = _submit(
@@ -119,10 +117,10 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
                     env
                     export HADOOP_CONF_DIR=%s
                     %s %s %s %s
-                """ % (hadoop_conf_dir, python_bin, launch_options, module_name, launch_args))
+                """, hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
 
-    _logger.info("ENV DICT = %s" % env)
-    _logger.info("ADDITIONAL FILES = %s" % dict_files_to_upload)
+    _logger.info("ENV DICT = %s", env)
+    _logger.info("ADDITIONAL FILES = %s", dict_files_to_upload)
 
     service = skein.Service(
         resources=skein.model.Resources(memory, num_cores),
@@ -157,8 +155,7 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
     if node_label:
         service.node_label = node_label
 
-    # return skein_client.submit(spec)
-    return "app_id_12345"
+    return skein_client.submit(spec)
 
 
 def _merge_env_lists(env_params, env_yarn_cfg):
@@ -218,8 +215,8 @@ def _get_application_logs(skein_client, app_id, wait_for_nb_logs=None, log_tries
             if not wait_for_nb_logs or nb_keys == wait_for_nb_logs:
                 return logs
         except Exception:
-            _logger.warning(
-                f"Cannot collect logs (attempt {ind+1}/{log_tries})")
+            _logger.warning("Cannot collect logs (attempt %s/%s",
+                            ind+1, log_tries)")
         time.sleep(3)
     return None
 
