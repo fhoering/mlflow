@@ -175,13 +175,14 @@ def _get_key_from_params(params, key, remove_key=True):
     return values
 
 
-def _parse_yarn_config(backend_config, extra_params={}):
+def _parse_yarn_config(backend_config, extra_params=None):
     """
     Parses configuration for yarn backend and returns a dictionary
     with all needed values. In case values are not found in ``backend_config``
     dict passed, it is filled with the default values.
     """
 
+    extra_params = extra_params or {}
     if not backend_config:
         raise ExecutionException("Backend_config file not found.")
     yarn_config = backend_config.copy()
