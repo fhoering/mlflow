@@ -114,6 +114,7 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
     launch_args = args if args else ""
     _logger.info("""
                     set -x
+                    ls -al .
                     env
                     export HADOOP_CONF_DIR=%s
                     %s %s %s %s
@@ -129,12 +130,14 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
         env=env,
         script="""
                     set -x
+                    ls -al .
                     env
                     export HADOOP_CONF_DIR=%s
                     %s %s %s %s
                 """ % (hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
     )
 
+    _logger.info("FILE_SYSTEMS = %s", hadoop_file_systems)
     spec = skein.ApplicationSpec(
         name=name,
         file_systems=hadoop_file_systems,
@@ -154,6 +157,8 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
 
     if node_label:
         service.node_label = node_label
+
+    print("SKEIN APP SPEC: %s" % spec.to_json())
 
     return skein_client.submit(spec)
 
@@ -190,7 +195,9 @@ def _parse_yarn_config(backend_config, extra_params=None):
     for cfg_key in [YARN_NUM_CORES, YARN_MEMORY, YARN_QUEUE,
                     YARN_HADOOP_FILESYSTEMS, YARN_HADOOD_CONF_DIR,
                     YARN_ENV, YARN_ADDITIONAL_FILES]:
-        yarn_config[cfg_key] = extra_params.get(YARN_NUM_CORES, yarn_cfg_defaults[cfg_key])
+        if cfg_key not in yarn_config.keys():
+            yarn_config[cfg_key] = extra_params.get(YARN_NUM_CORES,
+                                                    yarn_cfg_defaults[cfg_key])
     return yarn_config
 
 
