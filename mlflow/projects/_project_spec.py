@@ -70,7 +70,7 @@ def load_project(directory):
         pex_env_path = os.path.join(directory, pex_env)
         if not os.path.exists(pex_env_path):
             raise ExecutionException("Project specified pex environment file %s, but no such "
-                            "file was found." % pex_env_path)
+                                     "file was found." % pex_env_path)
 
     # CRITEO END
 
