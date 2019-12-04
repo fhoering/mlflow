@@ -20,7 +20,7 @@ YARN_NUM_CORES = 'num_cores'
 YARN_MEMORY = 'memory'
 YARN_QUEUE = 'queue'
 YARN_HADOOP_FILESYSTEMS = 'hadoop_filesystems'
-YARN_HADOOD_CONF_DIR = 'hadoop_conf_dir'
+YARN_HADOOP_CONF_DIR = 'hadoop_conf_dir'
 # Extra parameters to configure skein setup
 YARN_ENV = 'env'
 YARN_ADDITIONAL_FILES = 'additional_files'
@@ -31,7 +31,7 @@ yarn_cfg_defaults = {
     YARN_MEMORY: "1 GiB",
     YARN_QUEUE: "defautl",
     YARN_HADOOP_FILESYSTEMS: '',
-    YARN_HADOOD_CONF_DIR: '',
+    YARN_HADOOP_CONF_DIR: '',
     YARN_ENV: {},
     YARN_ADDITIONAL_FILES: []
 }
@@ -77,7 +77,7 @@ def run_yarn_job(remote_run, uri, entry_point_obj, final_params, extra_params,
             memory=yarn_config[YARN_MEMORY],
             queue=yarn_config[YARN_QUEUE],
             hadoop_file_systems=yarn_config[YARN_HADOOP_FILESYSTEMS].split(','),
-            hadoop_conf_dir=yarn_config[YARN_HADOOD_CONF_DIR],
+            hadoop_conf_dir=yarn_config[YARN_HADOOP_CONF_DIR],
             env_vars=env,
             additional_files=additional_files,
             pex_env=pex_env
@@ -194,7 +194,7 @@ def _parse_yarn_config(backend_config, extra_params=None):
     yarn_config = backend_config.copy()
 
     for cfg_key in [YARN_NUM_CORES, YARN_MEMORY, YARN_QUEUE,
-                    YARN_HADOOP_FILESYSTEMS, YARN_HADOOD_CONF_DIR,
+                    YARN_HADOOP_FILESYSTEMS, YARN_HADOOP_CONF_DIR,
                     YARN_ENV, YARN_ADDITIONAL_FILES]:
         if cfg_key not in yarn_config.keys():
             yarn_config[cfg_key] = extra_params.get(YARN_NUM_CORES,
@@ -232,7 +232,10 @@ def _get_application_logs(skein_client, app_id, wait_for_nb_logs=None, log_tries
 
 class YarnSubmittedRun(SubmittedRun):
     """
-    Documentation goes here
+    Instance of SubmittedRun corresponding to a Yarn Job launched through skein to run an MLflow
+    project.
+    :param skein_app_id: ID of the submitted Skein Application.
+    :param mlflow_run_id: ID of the MLflow project run.
     """
 
     POLL_STATUS_INTERNAL_SECS = 30
@@ -280,7 +283,7 @@ class YarnSubmittedRun(SubmittedRun):
         if app_state == skein.model.FinalStatus.SUCCEEDED:
             return RunStatus.FINISHED
         elif app_state == skein.model.FinalStatus.KILLED:
-            return RunStatus.KILLEDs
+            return RunStatus.KILLED
         elif app_state == skein.model.FinalStatus.FAILED:
             return RunStatus.FAILED
         elif app_state == skein.model.FinalStatus.UNDEFINED:
