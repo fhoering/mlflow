@@ -6,7 +6,6 @@ import os
 from mlflow.exceptions import ExecutionException
 from mlflow.projects.submitted_run import SubmittedRun
 from mlflow.entities import RunStatus
-from skein.exceptions import ConnectionError, TimeoutError
 
 _logger = logging.getLogger(__name__)
 
@@ -223,7 +222,7 @@ def _get_application_logs(skein_client, app_id, wait_for_nb_logs=None, log_tries
             _logger.info(f"Got {nb_keys}/{wait_for_nb_logs} log files")
             if not wait_for_nb_logs or nb_keys == wait_for_nb_logs:
                 return logs
-        except (ConnectionError, TimeoutError) as ex:
+        except (skein.exceptions.ConnectionError, skein.exceptions.TimeoutError) as ex:
             _logger.exception("Cannot collect logs (attempt %s/%s) due to exception: %s",
                               ind + 1, log_tries, ex)
         time.sleep(3)
