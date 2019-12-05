@@ -104,8 +104,8 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
     dict_files_to_upload = {os.path.basename(path): os.path.abspath(path)
                             for path in additional_files}
 
-    python_bin = f"./{os.path.basename(pex_env)}" if pex_env.endswith(
-        '.pex') else f"./{os.path.basename(pex_env)}/bin/python"
+    python_bin = "./%s" % os.path.basename(pex_env) if pex_env.endswith(
+        '.pex') else "./%s/bin/python" % os.path.basename(pex_env)
 
     launch_options = "-m" if not module_name.endswith(".py") else ""
     launch_args = args if args else ""
