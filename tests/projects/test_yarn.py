@@ -1,5 +1,4 @@
 import pytest
-import mlflow
 from mlflow.projects import _project_spec
 from mlflow.exceptions import ExecutionException
 from mlflow.projects.yarn import _validate_yarn_env
