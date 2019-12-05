@@ -203,7 +203,7 @@ def _format_app_report(report):
         "user"
     ]
     return os.linesep + os.linesep.join(
-        f"{attr:>16}: {getattr(report, attr) or ''}" for attr in attrs)
+        "{:>16}: {}".format(attr, getattr(report, attr) or '') for attr in attrs)
 
 
 def _get_application_logs(skein_client, app_id, wait_for_nb_logs=None, log_tries=15):
