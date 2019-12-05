@@ -146,6 +146,15 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
     return skein_client.submit(spec)
 
 
+def _validate_yarn_env(project):
+    if not project.name:
+        raise ExecutionException("Project name in MLProject must be specified when "
+                                 "using Yarn backend.")
+    if not project.pex_env:
+        raise ExecutionException("Project must specify pex environment in order to run "
+                                 "on Yarn backend.")
+
+
 def _merge_env_lists(env_params, env_yarn_cfg):
     env = dict(value.split('=') for value in env_params)
     env.update(dict(value.split('=') for value in env_yarn_cfg))

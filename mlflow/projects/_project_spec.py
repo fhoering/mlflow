@@ -62,8 +62,10 @@ def load_project(directory):
 
     # CRITEO
     pex_env = yaml_obj.get("pex_env")
-    if sum(env is not None for env in [docker_env, conda_env, pex_env]) > 1:
-        raise ExecutionException("Project cannot contain more than one environment.")
+    total_envs = sum(env is not None for env in [docker_env, conda_env, pex_env])
+    if total_envs > 1:
+        raise ExecutionException("Project cannot contain more than one environment, %s found"
+                                 % total_envs)
 
     pex_env_path = ""
     if pex_env:

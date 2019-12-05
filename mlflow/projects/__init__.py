@@ -208,6 +208,8 @@ def _run(uri, experiment_id, entry_point="main", version=None, parameters=None,
     elif backend == "yarn":
         from mlflow.projects import yarn
 
+        yarn._validate_yarn_env(project)
+
         tracking.MlflowClient().set_tag(active_run.info.run_id, MLFLOW_PROJECT_BACKEND, "yarn")
 
         submitted_run = yarn.run_yarn_job(

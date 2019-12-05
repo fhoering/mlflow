@@ -1,0 +1,3 @@
+name: Greeter
+
+pex_env: greeting-env.pex
