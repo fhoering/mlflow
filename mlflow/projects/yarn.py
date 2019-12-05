@@ -52,21 +52,21 @@ def run_yarn_job(remote_run, uri, entry_point_obj, final_params, extra_params,
                                  "You are using '%s'" % (kind_of_script))
 
     module_name = command_parts.pop(0)
+    if module_name.endswith(".py"):
+        module_name = os.path.join(uri, module_name)
+        additional_files += module_name
+
     args = " ".join(command_parts)
-    complete_module_name = os.path.join(uri, module_name)
 
     yarn_config = _parse_yarn_config(backend_config, extra_params=extra_params)
 
     env = _merge_env_lists(env_params, yarn_config[YARN_ENV])
     additional_files += yarn_config[YARN_ADDITIONAL_FILES]
 
-    _logger.info("run = %s , uri = %s, command = %s , experiment_id = %s",
-                 remote_run, uri, command, experiment_id)
-
     with skein.Client() as skein_client:
         app_id = _submit(
             skein_client=skein_client,
-            module_name=complete_module_name,
+            module_name=module_name,
             args=args,
             name="MLflow run for experiment {}".format(experiment_id),
             num_cores=yarn_config[YARN_NUM_CORES],
