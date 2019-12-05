@@ -9,9 +9,6 @@ from mlflow.entities import RunStatus
 
 _logger = logging.getLogger(__name__)
 
-# All tags prefixed mlflow.* don't appear in the UI
-# they are available in the DB though.
-MLFLOW_YARN_APPLICATION_ID = "mlflow.yarn.application_id"
 YARN_APPLICATION_ID = "yarn_application_id"
 
 # Configuration parameter names
@@ -112,16 +109,6 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
 
     launch_options = "-m" if not module_name.endswith(".py") else ""
     launch_args = args if args else ""
-    _logger.info("""
-                    set -x
-                    ls -al .
-                    env
-                    export HADOOP_CONF_DIR=%s
-                    %s %s %s %s
-                """, hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
-
-    _logger.info("ENV DICT = %s", env)
-    _logger.info("ADDITIONAL FILES = %s", dict_files_to_upload)
 
     service = skein.Service(
         resources=skein.model.Resources(memory, num_cores),
@@ -130,14 +117,12 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
         env=env,
         script="""
                     set -x
-                    ls -al .
                     env
                     export HADOOP_CONF_DIR=%s
                     %s %s %s %s
                 """ % (hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
     )
 
-    _logger.info("FILE_SYSTEMS = %s", hadoop_file_systems)
     spec = skein.ApplicationSpec(
         name=name,
         file_systems=hadoop_file_systems,
@@ -157,8 +142,6 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
 
     if node_label:
         service.node_label = node_label
-
-    print("SKEIN APP SPEC: %s" % spec.to_json())
 
     return skein_client.submit(spec)
 

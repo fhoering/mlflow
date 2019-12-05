@@ -218,9 +218,6 @@ def _run(uri, experiment_id, entry_point="main", version=None, parameters=None,
         )
 
         tracking.MlflowClient().set_tag(active_run.info.run_id,
-                                        yarn.MLFLOW_YARN_APPLICATION_ID,
-                                        submitted_run._skein_app_id)
-        tracking.MlflowClient().set_tag(active_run.info.run_id,
                                         yarn.YARN_APPLICATION_ID,
                                         submitted_run._skein_app_id)
 
