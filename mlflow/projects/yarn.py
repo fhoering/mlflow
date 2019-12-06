@@ -211,7 +211,7 @@ def _get_application_logs(skein_client, app_id, wait_for_nb_logs=None, log_tries
         try:
             logs = skein_client.application_logs(app_id)
             nb_keys = len(logs.keys())
-            _logger.info(f"Got {nb_keys}/{wait_for_nb_logs} log files")
+            _logger.info("Got %s/%s log files", nb_keys, wait_for_nb_logs)
             if not wait_for_nb_logs or nb_keys == wait_for_nb_logs:
                 return logs
         except (skein.exceptions.ConnectionError, skein.exceptions.TimeoutError) as ex:
