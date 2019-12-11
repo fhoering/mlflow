@@ -984,6 +984,14 @@ class TestSqlAlchemyStoreSqlite(unittest.TestCase):
         six.assertCountEqual(self, [r2],
                              self._search(experiment_id,
                                           filter_string="tags.generic_2 ILIKE '%Other%'"))
+        six.assertCountEqual(self, [r2],
+                             self._search(experiment_id,
+                                          filter_string="tags.generic_2 ILIKE '%Other%' "
+                                                        "and tags.generic_tag = 'p_val'"))
+        six.assertCountEqual(self, [r2],
+                             self._search(experiment_id,
+                                          filter_string="tags.generic_2 ILIKE '%Other%' and "
+                                                        "tags.generic_tag ILIKE 'p_val'"))
 
     def test_search_metrics(self):
         experiment_id = self._experiment_factory('search_metric')
