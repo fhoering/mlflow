@@ -33,8 +33,8 @@ yarn_cfg_defaults = {
 }
 
 
-def run_yarn_job(remote_run, uri, entry_point_obj, final_params, extra_params,
-                 experiment_id, pex_env, backend_config=None):
+def run_yarn_job(remote_run, entry_point_obj, final_params, extra_params,
+                 experiment_id, pex_env, run_env, backend_config=None):
 
     env_params = _get_key_from_params(extra_params, "env", remove_key=True)
     additional_files = _get_key_from_params(extra_params, "additional_files", remove_key=True)
@@ -52,15 +52,12 @@ def run_yarn_job(remote_run, uri, entry_point_obj, final_params, extra_params,
                                  "You are using '%s'" % (kind_of_script))
 
     module_name = command_parts.pop(0)
-    if module_name.endswith(".py"):
-        module_name = os.path.join(uri, module_name)
-        additional_files += module_name
-
     args = " ".join(command_parts)
 
     yarn_config = _parse_yarn_config(backend_config, extra_params=extra_params)
 
     env = _merge_env_lists(env_params, yarn_config[YARN_ENV])
+    env.update(run_env)
     additional_files += yarn_config[YARN_ADDITIONAL_FILES]
 
     with skein.Client() as skein_client:
