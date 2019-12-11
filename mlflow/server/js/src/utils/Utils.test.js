@@ -255,7 +255,7 @@ test('getPrivateVcsRegex', () => {
     send: jest.fn(),
     status: 404,
     responseText: JSON.stringify({"vcs_regex": "some_regex"}),
-  }));  
+  }));
   expect(Utils.getPrivateVcsRegex()).toEqual(null);
   teardown_mock();
 });
