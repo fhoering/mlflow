@@ -495,12 +495,7 @@ class Utils {
     if (!window.privateVcsCommit) {
       window.privateVcsCommit = Utils.getPrivateVcsUrl('commit');
     }
-
-    if (window.privateVcsRegex && window.privateVcsRepo && window.privateVcsCommit) {
-      return true;
-    } else {
-      return false;
-    }
+    return window.privateVcsRegex && window.privateVcsRepo && window.privateVcsCommit;
   }
 }
 
