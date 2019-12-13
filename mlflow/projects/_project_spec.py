@@ -68,7 +68,9 @@ def load_project(directory):
                                  % total_envs)
 
     pex_env_path = ""
-    if pex_env:
+    if pex_env and (pex_env.startswith('viewfs://') or pex_env.startswith('hdfs://')):
+        pex_env_path = pex_env
+    elif pex_env:
         pex_env_path = os.path.join(directory, pex_env)
         if not os.path.exists(pex_env_path):
             raise ExecutionException("Project specified pex environment file %s, but no such "

@@ -128,7 +128,7 @@ def _generate_skein_service(memory, num_cores, num_containers, env_vars, additio
     launch_args = args if args else ""
 
     dict_files_to_upload = {os.path.basename(path): os.path.abspath(path)
-                            for path in additional_files}
+                            if not _is_hdfs_path(path) else path for path in additional_files}
     python_bin = "./%s" % os.path.basename(pex_env) if pex_env.endswith(
         '.pex') else "./%s/bin/python" % os.path.basename(pex_env)
 
@@ -144,6 +144,10 @@ def _generate_skein_service(memory, num_cores, num_containers, env_vars, additio
                     %s %s %s %s
                 """ % (hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
     )
+
+
+def _is_hdfs_path(path):
+    return path.startswith('viewfs://') or path.startswith('hdfs://')
 
 
 def _validate_yarn_env(project):
