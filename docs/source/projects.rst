@@ -87,6 +87,16 @@ Conda environment
   file in the root of the project directory or by including a ``conda_env`` entry in your
   ``MLproject`` file. For details, see the :ref:`project-directories` and :ref:`mlproject-specify-environment` sections.
 
+.. _project-pex-environments:
+
+Pex environment
+  Pex environments support - Used for YARN backend
+  When an MLflow Project specifies a pex environment, it is shipped on the cluster.
+
+  You can specify a Pex environment for your MLflow project by including a ``pex_env`` entry in your
+  ``MLproject`` file. It correspond to the path on the local filesystem or on hdfs where the pex can be found.
+  For details, see the :ref:`project-directories` and :ref:`mlproject-specify-environment` sections.
+
 .. _project-docker-container-environments:
 
 Docker container environment
