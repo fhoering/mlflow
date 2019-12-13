@@ -572,6 +572,79 @@ The ``container.name``, ``container.image``, and ``container.command`` fields ar
 the *first* container defined in the Job Spec. All subsequent container definitions are applied
 without modification.
 
+
+.. _yarn_execution:
+
+Run an MLflow Project on Yarn (experimental)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. important:: As an experimental feature, the API is subject to change.
+
+You can run MLflow Projects with pex environments on Yarn.
+The following sections provide an overview of the feature, including a simple
+Project execution guide with examples.
+
+
+To see this feature in action, you can also refer to the
+`Yarn example <https://github.com/mlflow/mlflow/tree/master/examples/yarn>`_, which includes
+the required Kubernetes backend configuration (``yarn_conf.json``) and a pex file.
+
+How it works
+~~~~~~~~~~~~
+
+When you run an MLflow Project on Yarn, MLflow ship your pex to the yarn cluster and run
+the specified entry point.
+
+
+Execution guide
+~~~~~~~~~~~~~~~
+
+You can run your MLflow Project on Kubernetes by following these steps:
+
+1. package your project in a pex.
+
+2. Create a backend configuration JSON file with the following entries:
+
+   - ``additional_files``
+     An array of strings that represents path to files that should be shipped to the cluster.
+   - ``num_cores``
+     The number of virtual cores to request.
+   - ``memory``
+     The amount of memory to request. Can be either a string with units (e.g. "5 GiB"), or numeric.
+     If numeric, specifies the amount of memory in MiB.
+   - ``queue``
+     The queue to submit the application to.
+   - ``hadoop_filesystems``
+      List of Hadoop file systems to acquire delegation tokens for.
+   - ``hadoop_conf_dir``
+     Path to directory containing hadoop configuration files in containers.
+     HADOOP_CONF_DIR environment variable will be set with this path in containers.
+
+  .. rubric:: Example Yarn backend configuration
+
+  .. code-block:: json
+
+    {
+        "additional_files": ["./notebooks/specialMessage.ipynb"],
+        "num_cores": 1,
+        "memory": 1024,
+        "queue": "default",
+        "hadoop_filesystems": "viewfs://prod-am6,viewfs://prod-pa4,viewfs://preprod-pa4",
+        "hadoop_conf_dir": "/etc/hadoop/conf"
+    }
+
+3. If necessary, obtain credentials to access your Yarn cluster:
+
+4. Run the Project using the MLflow Projects CLI or :py:func:`Python API <mlflow.projects.run>`,
+   specifying your Project URI and the path to your backend configuration file. For example:
+
+   .. code-block:: bash
+
+    mlflow run <project_uri> --backend yarn --backend-config examples/yarn/yarn_config.json
+
+   where ``<project_uri>`` is a Git repository URI or a folder.
+
+
 Iterating Quickly
 -----------------
 

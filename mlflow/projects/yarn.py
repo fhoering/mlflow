@@ -87,38 +87,8 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
             hadoop_file_systems=None, hadoop_conf_dir="", queue=None, env_vars=None,
             additional_files=None, node_label=None, num_containers=1,
             user=None):
-
-    env = dict(env_vars) if env_vars else dict()
-    env.update(
-        {
-            'SKEIN_CONFIG': './.skein',
-            'PEX_ROOT': "./.pex",
-            "PYTHONPATH": ".",
-            "GIT_PYTHON_REFRESH": "quiet"
-        }
-    )
-
-    dict_files_to_upload = {os.path.basename(path): os.path.abspath(path)
-                            for path in additional_files}
-
-    python_bin = "./%s" % os.path.basename(pex_env) if pex_env.endswith(
-        '.pex') else "./%s/bin/python" % os.path.basename(pex_env)
-
-    launch_options = "-m" if not module_name.endswith(".py") else ""
-    launch_args = args if args else ""
-
-    service = skein.Service(
-        resources=skein.model.Resources(memory, num_cores),
-        instances=num_containers,
-        files=dict_files_to_upload,
-        env=env,
-        script="""
-                    set -x
-                    env
-                    export HADOOP_CONF_DIR=%s
-                    %s %s %s %s
-                """ % (hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
-    )
+    service = _generate_skein_service(memory, num_cores, num_containers, env_vars, additional_files,
+                                      hadoop_conf_dir, pex_env, module_name, args)
 
     spec = skein.ApplicationSpec(
         name=name,
@@ -141,6 +111,39 @@ def _submit(skein_client, module_name, args=None, name="yarn_launcher",
         service.node_label = node_label
 
     return skein_client.submit(spec)
+
+
+def _generate_skein_service(memory, num_cores, num_containers, env_vars, additional_files,
+                            hadoop_conf_dir, pex_env, module_name, args):
+    env = dict(env_vars) if env_vars else dict()
+    env.update(
+        {
+            'SKEIN_CONFIG': './.skein',
+            'PEX_ROOT': "./.pex",
+            "PYTHONPATH": ".",
+            "GIT_PYTHON_REFRESH": "quiet"
+        }
+    )
+    launch_options = "-m" if not module_name.endswith(".py") else ""
+    launch_args = args if args else ""
+
+    dict_files_to_upload = {os.path.basename(path): os.path.abspath(path)
+                            for path in additional_files}
+    python_bin = "./%s" % os.path.basename(pex_env) if pex_env.endswith(
+        '.pex') else "./%s/bin/python" % os.path.basename(pex_env)
+
+    return skein.Service(
+        resources=skein.model.Resources(memory, num_cores),
+        instances=num_containers,
+        files=dict_files_to_upload,
+        env=env,
+        script="""
+                    set -x
+                    env
+                    export HADOOP_CONF_DIR=%s
+                    %s %s %s %s
+                """ % (hadoop_conf_dir, python_bin, launch_options, module_name, launch_args)
+    )
 
 
 def _validate_yarn_env(project):
