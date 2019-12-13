@@ -587,7 +587,7 @@ Project execution guide with examples.
 
 To see this feature in action, you can also refer to the
 `Yarn example <https://github.com/mlflow/mlflow/tree/master/examples/yarn>`_, which includes
-the required Kubernetes backend configuration (``yarn_conf.json``) and a pex file.
+the required Yarn backend configuration (``yarn_conf.json``) and a pex file.
 
 How it works
 ~~~~~~~~~~~~
@@ -599,7 +599,7 @@ the specified entry point.
 Execution guide
 ~~~~~~~~~~~~~~~
 
-You can run your MLflow Project on Kubernetes by following these steps:
+You can run your MLflow Project on Yarn by following these steps:
 
 1. package your project in a pex.
 
@@ -641,6 +641,7 @@ You can run your MLflow Project on Kubernetes by following these steps:
    .. code-block:: bash
 
     mlflow run <project_uri> --backend yarn --backend-config examples/yarn/yarn_config.json
+             -e <entrypoint>
 
    where ``<project_uri>`` is a Git repository URI or a folder.
 

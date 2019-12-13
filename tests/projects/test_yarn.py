@@ -1,7 +1,8 @@
 import pytest
 from mlflow.projects import _project_spec
 from mlflow.exceptions import ExecutionException
-from mlflow.projects.yarn import _validate_yarn_env, _generate_skein_service, _get_key_from_params
+from mlflow.projects.yarn import _validate_yarn_env, _generate_skein_service, \
+    _get_key_from_params, _parse_yarn_config
 
 from tests.projects.utils import TEST_YARN_PROJECT_DIR
 
@@ -57,3 +58,31 @@ def test_generate_skein_service():
     assert service.resources == skein.model.Resources("1 GiB", 1)
     assert service.files == expected_files
 
+
+def test_parse_yarn_config():
+    backend_config = {
+        "additional_files": ["./notebooks/specialMessage.ipynb"],
+        "num_cores": 12,
+        "memory": 2048,
+        "queue": "default",
+        "hadoop_filesystems": "viewfs://filesystem",
+        "hadoop_conf_dir": "/etc/hadoop/conf"
+    }
+    expected_backend_config = {
+        "additional_files": ["./notebooks/specialMessage.ipynb"],
+        "num_cores": 12,
+        "memory": 2048,
+        "queue": "default",
+        "hadoop_filesystems": "viewfs://filesystem",
+        "hadoop_conf_dir": "/etc/hadoop/conf",
+        "env": {}
+    }
+    yarn_config = _parse_yarn_config(backend_config)
+    assert yarn_config == expected_backend_config
+
+    extra_params = {
+        'env': 'env'
+    }
+    yarn_config = _parse_yarn_config(backend_config, extra_params)
+    expected_backend_config['env'] = 'env'
+    assert yarn_config == expected_backend_config

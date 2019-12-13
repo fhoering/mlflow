@@ -188,7 +188,7 @@ def _parse_yarn_config(backend_config, extra_params=None):
                     YARN_HADOOP_FILESYSTEMS, YARN_HADOOP_CONF_DIR,
                     YARN_ENV, YARN_ADDITIONAL_FILES]:
         if cfg_key not in yarn_config.keys():
-            yarn_config[cfg_key] = extra_params.get(YARN_NUM_CORES,
+            yarn_config[cfg_key] = extra_params.get(cfg_key,
                                                     yarn_cfg_defaults[cfg_key])
     return yarn_config
 
