@@ -175,6 +175,8 @@ file in YAML syntax, to the project's root directory. The following is an exampl
     # Can have a docker_env instead of a conda_env, e.g.
     # docker_env:
     #    image:  mlflow-docker-example
+    # Can have a pex_env instead of a conda_env, e.g.
+    # pex_env: mypex.pex
 
     entry_points:
       main:
@@ -212,6 +214,19 @@ Conda environment
 
   ``conda_env`` refers to an environment file located at 
   ``<MLFLOW_PROJECT_DIRECTORY>/files/config/conda_environment.yaml``, where 
+  ``<MLFLOW_PROJECT_DIRECTORY>`` is the path to the MLflow project's root directory.
+
+Pex environment
+  Include a top-level ``pex_env`` entry in the ``MLproject`` file.
+  The value of this entry must be a *relative* path to a pex file
+  within the MLflow project's directory, or a hdfs path. In the following example:
+
+  .. code-block:: yaml
+
+    conda_env: files/config/mypex.pex
+
+  ``pex_env`` refers to a pex file located at
+  ``<MLFLOW_PROJECT_DIRECTORY>/files/config/mypex.pex``, where
   ``<MLFLOW_PROJECT_DIRECTORY>`` is the path to the MLflow project's root directory.
 
 Docker container environment
@@ -353,6 +368,9 @@ Deployment Mode
 
     - You can also launch projects remotely on `Kubernetes <https://Kubernetes.io/>`_ clusters
       using the ``mlflow run`` CLI (see :ref:`kubernetes_execution`).
+
+    - You can also launch projects remotely on `Yarn <https://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html>`_ clusters
+      using the ``mlflow run`` CLI (see :ref:`yarn_execution`).
 
 Environment
     By default, MLflow Projects are run in the environment specified by the project directory
@@ -597,7 +615,7 @@ Project execution guide with examples.
 
 To see this feature in action, you can also refer to the
 `Yarn example <https://github.com/mlflow/mlflow/tree/master/examples/yarn>`_, which includes
-the required Yarn backend configuration (``yarn_conf.json``) and a pex file.
+the required Yarn backend configuration (``yarn_conf.json``), the required MLproject file, and a pex file.
 
 How it works
 ~~~~~~~~~~~~
@@ -643,9 +661,24 @@ You can run your MLflow Project on Yarn by following these steps:
         "hadoop_conf_dir": "/etc/hadoop/conf"
     }
 
-3. If necessary, obtain credentials to access your Yarn cluster:
+3. Create a MLproject file indicating your pex and your entrypoint:
 
-4. Run the Project using the MLflow Projects CLI or :py:func:`Python API <mlflow.projects.run>`,
+    .. code-block:: yaml
+
+      name: My Yarn Project
+
+      pex_env: mypex.pex
+
+      entry_points:
+          greet:
+              parameters:
+                  param1: {type: string, default: "param1"}
+                  param2: {type: string, default: "param2"}
+                  command: "python my_entrypoint --param1 {param1} --param2 {param2}"
+
+4. If necessary, obtain credentials to access your Yarn cluster.
+
+5. Run the Project using the MLflow Projects CLI or :py:func:`Python API <mlflow.projects.run>`,
    specifying your Project URI and the path to your backend configuration file. For example:
 
    .. code-block:: bash
