@@ -158,8 +158,9 @@ class HdfsArtifactRepository(ArtifactRepository):
             'This is not implemented. Should never be called.')
 
     def delete_artifacts(self, artifact_path):
+        _, _, path = _resolve_connection_params(artifact_path)
         with hdfs_system(host=self.host, port=self.port) as hdfs:
-            hdfs.delete(artifact_path, recursive=True)
+            hdfs.delete(path, recursive=True)
 
 
 @contextmanager
