@@ -255,3 +255,18 @@ def test_delete_artifacts(hdfs_system_mock):
     repo = HdfsArtifactRepository('hdfs:/some_path/maybe/path')
     repo.delete_artifacts('hdfs:/some_path/maybe/path/artifacts')
     delete_mock.assert_called_once_with('/some_path/maybe/path/artifacts', recursive=True)
+
+
+@mock.patch('pyarrow.hdfs.HadoopFileSystem', spec=HadoopFileSystem)
+def test_download_file(hdfs_system_mock):
+    expected_data = b"hello"
+    artifact_paths = ["hdfs://host/test.txt", "hdfs://host/test.txt/"]
+    hdfs_system_mock.return_value.open = mock_open(read_data=expected_data)
+
+    for artifact_path in artifact_paths:
+        hdfs_repo = HdfsArtifactRepository(artifact_path)
+        with TempDir() as tmp_dir:
+            hdfs_repo._download_file(artifact_path,
+                                     tmp_dir.path())
+            with open(os.path.join(tmp_dir.path(), 'test.txt'), "rb") as fd:
+                assert expected_data == fd.read()
