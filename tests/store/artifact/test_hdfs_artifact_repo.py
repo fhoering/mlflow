@@ -253,7 +253,7 @@ def test_archive_artifacts_empty_run(mock_remove_folder):
 def test_delete_artifacts(hdfs_system_mock):
     delete_mock = hdfs_system_mock.return_value.delete
     repo = HdfsArtifactRepository('hdfs:/some_path/maybe/path')
-    repo.delete_artifacts('hdfs:/some_path/maybe/path/artifacts')
+    repo.delete_artifacts('artifacts')
     delete_mock.assert_called_once_with('/some_path/maybe/path/artifacts', recursive=True)
 
 
