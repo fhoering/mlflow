@@ -161,7 +161,7 @@ class HdfsArtifactRepository(ArtifactRepository):
             _download_hdfs_file(hdfs, path, local_path)
 
     def delete_artifacts(self, artifact_path=None):
-        path = os.path.join(self.path, artifact_path) if artifact_path else self.path
+        path = posixpath.join(self.path, artifact_path) if artifact_path else self.path
         with hdfs_system(host=self.host, port=self.port) as hdfs:
             hdfs.delete(path, recursive=True)
 
