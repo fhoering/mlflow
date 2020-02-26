@@ -22,7 +22,6 @@ from mlflow.server import handlers
 from mlflow import experiments
 from mlflow.store.tracking.sqlalchemy_store import SqlAlchemyStore
 from mlflow.store.tracking.file_store import FileStore
-from mlflow.exceptions import MlflowException
 from mlflow.entities import ViewType
 
 
