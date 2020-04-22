@@ -416,6 +416,8 @@ def spark_udf(spark, model_uri, result_type="double"):
     from pyspark.sql.types import ArrayType, DataType
     from pyspark.sql.types import DoubleType, IntegerType, FloatType, LongType, StringType
 
+    os.environ["ARROW_PRE_0_15_IPC_FORMAT"] = "1"
+
     if not isinstance(result_type, DataType):
         result_type = _parse_datatype_string(result_type)
 
