@@ -134,7 +134,7 @@ def test_fetch_create_and_log(tmpdir):
     entry_point = _project_spec.EntryPoint(entry_point_name, parameters, "run_model.sh")
     mock_fetched_project = _project_spec.Project(None,
                                                  {entry_point_name: entry_point},
-                                                 None, "my_project")
+                                                 None, None, "my_project")
     experiment_id = mlflow.create_experiment("test_fetch_project")
     expected_dir = tmpdir
     project_uri = "http://someuri/myproject.git"

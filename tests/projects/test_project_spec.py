@@ -82,7 +82,7 @@ def test_load_docker_project(tmpdir):
     docker_env:
         image: some-image
     conda_env: some-file.yaml
-    """), "cannot contain both a docker and conda env"),
+    """), "can only contain either docker_env, conda_env or pip_path"),
     (textwrap.dedent("""
     docker_env:
         not-image-attribute: blah
